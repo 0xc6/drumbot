@@ -22,13 +22,11 @@ uint8_t timer_has_elapsed(uint8_t tmr_num);
 uint16_t timer_stop(uint8_t tmr_num);
 void timer_check();
 
-#define NUM_TIMERS 4
+#define NUM_TIMERS 1
 #define TIMER_LED 0 //this timer is used to blink the red code led
-#define TIMER_SM_TIMEOUT 1 //this timer is used for timeouts in the state machine
-#define TIMER_BTN_CODE 2 //this timer measures for how long the code button has been pressed
-#define TIMER_BTN_ACTION 3 //this timer measures for how long the action button has been pressed
+#define TIMER_PRIMARY_ENCODER 1
 
-#define TIMER_RESOLUTION 20 //milliseconds
+#define TIMER_RESOLUTION 10 //milliseconds
 #define TIMER_MS_TO_TICKS(v) ((v) / TIMER_RESOLUTION)
 #define TIMER_TICKS_TO_MS(v) ((v) * TIMER_RESOLUTION)
 

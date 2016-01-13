@@ -16,22 +16,11 @@
 struct timer_t timer_data[NUM_TIMERS];
 
 void timer_init() {
-/* TODO: remove me
-	TCNT0 = 0x00; //counter value to zero
-	OCR0 = 113; //Output Compare Register
-	TIMSK |= (1 << OCIE0); //enable the output compare interrupt
-	//Timer Control = CTC mode, Prescaler = 64 (this starts the timer)
-	TCCR0 = (1 << WGM01) | (1 << CS01) | (1 << CS00);
-
-*/
-
 	TCNT2 = 0x00; //counter value to zero
-	OCR2 = 77; //Output Compare Register preset
+	OCR2 = 37; //Output Compare Register preset
 	TIMSK |= (1 << OCIE2); //enable the output compare interrupt
 	//Timer Control = CTC mode, prescaler = 256 (this starts the timer)
 	TCCR2 = (1 << WGM21) | (1 << CS22) | (1 << CS21);
-
-
 }
 
 void timer_register(uint8_t tmr_num, void (*cb)(uint8_t id)) {

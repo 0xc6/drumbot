@@ -1,7 +1,7 @@
 /*
  * main.c
  *
- *  Created on: 20.07.2013
+ *  Created on: 11.01.2016
  *      Author: cgries
  */
 
@@ -12,39 +12,44 @@
 #include <avr/io.h>
 
 #include "timer.h"
-#include "button.h"
+#include "encoder.h"
 #include "main.h"
 /**
  * current pin layout:
  *
- * PC5: relay out
- * PB1: code button in, PB2: action button in
- * PC2: Switch "door open" in
- * PC4: code led out, PC3: action led out
- *
- * PD0, PD1: password length DIP switches
- * PD2, PD3, PD4, PB7, PD5, PD6, PD7, PB0: code (off: dot, on: dash)
  */
 
 
+void my_led_timer(uint8_t tmr_id) {
+	PORTB ^= (1 << PB0);
+	timer_set(TIMER_LED, 1000);
+}
 
 
 int main(void) {
 
 
 	timer_init();
-	button_init();
+	encoder_init();
 
-
+	//testcode
+	DDRB |= (1 << PB0);
+	timer_register(TIMER_LED, &my_led_timer);
+	my_led_timer(TIMER_LED);
+	// end testcode
+	
 	sei(); //globally enable interrupts
 
-	DDRB |= (1 << PB0);
-	PORTB &= ~(1 << PB0);
+
+
 
 	while (1) {
 
 		//see if we need to run any timer call-backs
 		timer_check();
+		
+		//run encoder events
+		encoder_check();
 
 		//have any buttons been pressed?
 		//button_check();
