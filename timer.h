@@ -15,12 +15,12 @@ struct timer_t { //auto-initialized
 	void (*tmr_cb)(uint8_t id);
 };
 
-void timer_init();
+void timer_init(void);
 void timer_register(uint8_t tmr_num, void (*cb)(uint8_t id));
 void timer_set(uint8_t tmr_num, uint16_t val);
 uint8_t timer_has_elapsed(uint8_t tmr_num);
 uint16_t timer_stop(uint8_t tmr_num);
-void timer_check();
+void timer_check(void);
 
 #define NUM_TIMERS 1
 #define TIMER_LED 0 //this timer is used to blink the red code led

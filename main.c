@@ -12,25 +12,30 @@
 #include <avr/io.h>
 
 #include "timer.h"
-#include "encoder.h"
+//#include "encoder.h"
+#include "lcd.h"
 #include "main.h"
 /**
  * current pin layout:
  *
  */
 
+static uint8_t cur_char = 0x00;
 
 void my_led_timer(uint8_t tmr_id) {
 	PORTB ^= (1 << PB0);
 	timer_set(TIMER_LED, 1000);
+	
+	lcd_putc(cur_char++);
 }
 
 
 int main(void) {
 
-
+	lcd_init(LCD_DISP_ON);
 	timer_init();
-	encoder_init();
+	//encoder_init();
+	
 
 	//testcode
 	DDRB |= (1 << PB0);
@@ -40,7 +45,10 @@ int main(void) {
 	
 	sei(); //globally enable interrupts
 
-
+	
+	lcd_puts_P("Hello World");
+	lcd_gotoxy(0,1);
+	lcd_puts_P("Second line");
 
 
 	while (1) {
@@ -49,7 +57,7 @@ int main(void) {
 		timer_check();
 		
 		//run encoder events
-		encoder_check();
+		//encoder_check();
 
 		//have any buttons been pressed?
 		//button_check();

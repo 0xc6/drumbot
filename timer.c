@@ -15,7 +15,7 @@
 
 struct timer_t timer_data[NUM_TIMERS];
 
-void timer_init() {
+void timer_init(void) {
 	TCNT2 = 0x00; //counter value to zero
 	OCR2 = 37; //Output Compare Register preset
 	TIMSK |= (1 << OCIE2); //enable the output compare interrupt
@@ -51,7 +51,7 @@ uint8_t timer_has_elapsed(uint8_t tmr_num) {
 	return elapsed;
 }
 
-void timer_check() {
+void timer_check(void) {
 	uint8_t run_cb;
 
 	for (uint8_t i = 0; i < NUM_TIMERS; i++) {
