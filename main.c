@@ -12,43 +12,56 @@
 #include <avr/io.h>
 
 #include "timer.h"
-//#include "encoder.h"
+#include "encoder.h"
 #include "lcd.h"
 #include "main.h"
+
+#include <avr/interrupt.h>
+#include <util/atomic.h>
 /**
  * current pin layout:
  *
  */
 
-static uint8_t cur_char = 0x00;
+static volatile int16_t enc_val = 0;
+static char enc_val_buf[12];
 
-void my_led_timer(uint8_t tmr_id) {
-	PORTB ^= (1 << PB0);
-	timer_set(TIMER_LED, 1000);
+void my_test_timer(uint8_t tmr_id) {
 	
-	lcd_putc(cur_char++);
+	enc_val += encode_read2();
+	
+	itoa(enc_val, enc_val_buf, 10);
+	lcd_clrscr();
+	lcd_puts(enc_val_buf);
+	
+	
+	PORTB ^= (1 << PB0); //toggle LED
+	timer_set(TIMER_LED, 100);
 }
+
 
 
 int main(void) {
 
 	lcd_init(LCD_DISP_ON);
 	timer_init();
-	//encoder_init();
+	encoder_init();
 	
 
 	//testcode
+	
+	//init LED blinker
 	DDRB |= (1 << PB0);
-	timer_register(TIMER_LED, &my_led_timer);
-	my_led_timer(TIMER_LED);
+	timer_register(TIMER_LED, &my_test_timer);
+	my_test_timer(TIMER_LED);
+	
+	
+	
+	
 	// end testcode
 	
-	sei(); //globally enable interrupts
+	//sei(); //globally enable interrupts
 
-	
-	lcd_puts_P("Hello World");
-	lcd_gotoxy(0,1);
-	lcd_puts_P("Second line");
 
 
 	while (1) {

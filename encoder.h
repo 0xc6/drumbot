@@ -15,23 +15,13 @@
 #ifndef ENCODER_H_
 #define ENCODER_H_
 
-#define NUM_ENCODERS 1
-#define PRIMARY_ENCODER 0
+#define ENCODER_PORT PINC
 
-struct encoder_controller_t {
-	struct encoder_t {
-		const uint8_t id;
+#define ENCODER_PHASE_A     (ENCODER_PORT & 1<<PC0)
+#define ENCODER_PHASE_B     (ENCODER_PORT & 1<<PC1)
 
-		uint8_t (*phase_a_get_status)();
-		uint8_t (*phase_b_get_status)();
-		const uint8_t timer; //this timer is responsible for polling this encoder
-		int16_t delta; 
-		
-	} encoder[NUM_ENCODERS];
-
-	void (*on_value_update)(uint8_t encoder_id);
-
-};
-
+int8_t encode_read1( void );         // read single step encoders
+int8_t encode_read2( void );         // read two step encoders
+void encoder_init( void );
 
 #endif /* ENCODER_H_ */
