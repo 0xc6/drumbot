@@ -14,6 +14,7 @@
 #include "timer.h"
 #include "encoder.h"
 #include "lcd.h"
+#include "menu.h"
 #include "main.h"
 
 #include <avr/interrupt.h>
@@ -26,26 +27,51 @@
 static volatile int16_t enc_val = 0;
 static char enc_val_buf[12];
 
+
+#define HIT_TIME 100
+
 void my_test_timer(uint8_t tmr_id) {
+	static uint8_t my_toggle = 0;
+	//enc_val += encode_read2();
 	
-	enc_val += encode_read2();
+	//itoa(enc_val, enc_val_buf, 10);
+	//lcd_clrscr();
+	//lcd_puts(enc_val_buf);
 	
-	itoa(enc_val, enc_val_buf, 10);
-	lcd_clrscr();
-	lcd_puts(enc_val_buf);
+	my_toggle++;
+	my_toggle %= 4;
 	
+	switch (my_toggle) {
+		case 0:
+			PORTB |= (1 << PB0);
+			timer_set(TIMER_LED, HIT_TIME);
+			break;
+		case 1:
+			PORTB &= ~(1<<PB0);
+			timer_set(TIMER_LED, 200);
+			break;
+		case 2:
+			PORTB |= (1 << PB0);
+			timer_set(TIMER_LED, HIT_TIME);
+			break;
+		case 3:
+			PORTB &= ~(1<<PB0);
+			timer_set(TIMER_LED, 700);
+			break;
+	}
+
+
 	
-	PORTB ^= (1 << PB0); //toggle LED
-	timer_set(TIMER_LED, 100);
 }
 
 
 
 int main(void) {
 
-	lcd_init(LCD_DISP_ON);
+	lcd_init(LCD_DISP_ON_CURSOR);
 	timer_init();
 	encoder_init();
+	menu_init();
 	
 
 	//testcode
