@@ -24,41 +24,11 @@
  *
  */
 
-static volatile int16_t enc_val = 0;
-static char enc_val_buf[12];
 
 
 #define HIT_TIME 100
 
 void my_test_timer(uint8_t tmr_id) {
-	static uint8_t my_toggle = 0;
-	//enc_val += encode_read2();
-	
-	//itoa(enc_val, enc_val_buf, 10);
-	//lcd_clrscr();
-	//lcd_puts(enc_val_buf);
-	
-	my_toggle++;
-	my_toggle %= 4;
-	
-	switch (my_toggle) {
-		case 0:
-			PORTB |= (1 << PB0);
-			timer_set(TIMER_LED, HIT_TIME);
-			break;
-		case 1:
-			PORTB &= ~(1<<PB0);
-			timer_set(TIMER_LED, 200);
-			break;
-		case 2:
-			PORTB |= (1 << PB0);
-			timer_set(TIMER_LED, HIT_TIME);
-			break;
-		case 3:
-			PORTB &= ~(1<<PB0);
-			timer_set(TIMER_LED, 700);
-			break;
-	}
 
 
 	
@@ -66,20 +36,48 @@ void my_test_timer(uint8_t tmr_id) {
 
 
 
+#define lcd_e_high()    LCD_E_PORT  |=  _BV(LCD_E_PIN)
+#define lcd_e_low()     LCD_E_PORT  &= ~_BV(LCD_E_PIN)
+#define DDR(x) (*(&x - 1))
+
 int main(void) {
 
-	lcd_init(LCD_DISP_ON_CURSOR);
-	timer_init();
-	encoder_init();
-	menu_init();
+	lcd_init(LCD_DISP_ON, 0);
+	lcd_init(LCD_DISP_ON, 1);
+	
+	
+	
+	//DDR(LCD_E_PORT)     |= _BV(LCD_E_PIN);
+	
+	//lcd_e_low();
+	lcd_gotoxy(0, 0);
+	lcd_puts_P("Hello World");
+	lcd_gotoxy(10, 1);
+	lcd_puts_P("Hello World");
+	lcd_gotoxy(20, 2);
+	lcd_puts_P("Hello World");
+	lcd_gotoxy(30, 3);
+	lcd_puts_P("Hello World");
+	
+	
+	//PORTC = 0;
+	//PORTD = 0;
+	
+	//DDRC = 0; //(0 << PC1) | (0 << PC2);
+	//DDRD = 0; //(1 << PD0) | (1 << PD1); 
+	
+	
+//	timer_init();
+//	encoder_init();
+//	menu_init();
 	
 
 	//testcode
 	
 	//init LED blinker
-	DDRB |= (1 << PB0);
-	timer_register(TIMER_LED, &my_test_timer);
-	my_test_timer(TIMER_LED);
+//	DDRB |= (1 << PB0);
+//	timer_register(TIMER_LED, &my_test_timer);
+//	my_test_timer(TIMER_LED);
 	
 	
 	
@@ -93,7 +91,7 @@ int main(void) {
 	while (1) {
 
 		//see if we need to run any timer call-backs
-		timer_check();
+		//timer_check();
 		
 		//run encoder events
 		//encoder_check();

@@ -79,11 +79,17 @@
  * All definitions added to the file lcd_definitions.h will override the default definitions from lcd.h
  *
  */
+ 
+//Added by CG to control multiple (identical) displays
+#ifndef LCD_NUM_LCDS
+#define LCD_NUM_LCDS		2
+#endif
+ 
 #ifndef LCD_LINES
 #define LCD_LINES           2     /**< number of visible lines of the display */
 #endif
 #ifndef LCD_DISP_LENGTH
-#define LCD_DISP_LENGTH    16     /**< visibles characters per line of the display */
+#define LCD_DISP_LENGTH    40     /**< visibles characters per line of the display */
 #endif
 #ifndef LCD_LINE_LENGTH
 #define LCD_LINE_LENGTH  0x40     /**< internal line length of the display    */
@@ -128,22 +134,22 @@
 #if LCD_IO_MODE
 
 #ifndef LCD_PORT
-#define LCD_PORT         PORTD        /**< port for the LCD lines   */
+#define LCD_PORT         	        /**< port for the LCD lines   */
 #endif
 #ifndef LCD_DATA0_PORT
-#define LCD_DATA0_PORT   LCD_PORT     /**< port for 4bit data bit 0 */
+#define LCD_DATA0_PORT   PORTC     /**< port for 4bit data bit 0 */
 #endif
 #ifndef LCD_DATA1_PORT
-#define LCD_DATA1_PORT   LCD_PORT     /**< port for 4bit data bit 1 */
+#define LCD_DATA1_PORT   PORTD     /**< port for 4bit data bit 1 */
 #endif
 #ifndef LCD_DATA2_PORT
-#define LCD_DATA2_PORT   LCD_PORT     /**< port for 4bit data bit 2 */
+#define LCD_DATA2_PORT   PORTC     /**< port for 4bit data bit 2 */
 #endif
 #ifndef LCD_DATA3_PORT
-#define LCD_DATA3_PORT   LCD_PORT     /**< port for 4bit data bit 3 */
+#define LCD_DATA3_PORT   PORTD     /**< port for 4bit data bit 3 */
 #endif
 #ifndef LCD_DATA0_PIN
-#define LCD_DATA0_PIN    0            /**< pin for 4bit data bit 0  */
+#define LCD_DATA0_PIN    1            /**< pin for 4bit data bit 0  */
 #endif
 #ifndef LCD_DATA1_PIN
 #define LCD_DATA1_PIN    1            /**< pin for 4bit data bit 1  */
@@ -152,26 +158,36 @@
 #define LCD_DATA2_PIN    2            /**< pin for 4bit data bit 2  */
 #endif
 #ifndef LCD_DATA3_PIN
-#define LCD_DATA3_PIN    3            /**< pin for 4bit data bit 3  */
+#define LCD_DATA3_PIN    0            /**< pin for 4bit data bit 3  */
 #endif
 #ifndef LCD_RS_PORT
 #define LCD_RS_PORT      PORTC     /**< port for RS line         */
 #endif
 #ifndef LCD_RS_PIN
-#define LCD_RS_PIN       5            /**< pin  for RS line         */
+#define LCD_RS_PIN       3            /**< pin  for RS line         */
 #endif
 #ifndef LCD_RW_PORT
 #define LCD_RW_PORT      PORTC     /**< port for RW line         */
 #endif
 #ifndef LCD_RW_PIN
-#define LCD_RW_PIN       4            /**< pin  for RW line         */
+#define LCD_RW_PIN       0            /**< pin  for RW line         */
 #endif
-#ifndef LCD_E_PORT
-#define LCD_E_PORT       PORTC     /**< port for Enable line     */
+
+
+#ifndef LCD_E0_PORT
+#define LCD_E0_PORT       PORTC     /**< port for Enable line     */
 #endif
-#ifndef LCD_E_PIN
-#define LCD_E_PIN        3            /**< pin  for Enable line     */
+#ifndef LCD_E0_PIN
+#define LCD_E0_PIN        4            /**< pin  for Enable line     */
 #endif
+
+#ifndef LCD_E1_PORT
+#define LCD_E1_PORT       PORTC     /**< port for Enable line     */
+#endif
+#ifndef LCD_E1_PIN
+#define LCD_E1_PIN        5            /**< pin  for Enable line     */
+#endif
+
 
 #elif defined(__AVR_AT90S4414__) || defined(__AVR_AT90S8515__) || defined(__AVR_ATmega64__) || \
       defined(__AVR_ATmega8515__)|| defined(__AVR_ATmega103__) || defined(__AVR_ATmega128__) || \
@@ -289,7 +305,7 @@
                     \b LCD_DISP_ON_CURSOR_BLINK display on, cursor on flashing             
  @return  none
 */
-extern void lcd_init(uint8_t dispAttr);
+extern void lcd_init(uint8_t dispAttr, uint8_t dispNum);
 
 
 /**
