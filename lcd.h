@@ -297,6 +297,8 @@
  */
 
 
+extern void lcd_select_active_display(uint8_t lcd_num);
+
 /**
  @brief    Initialize display and select type of cursor
  @param    dispAttr \b LCD_DISP_OFF display off\n
@@ -305,7 +307,7 @@
                     \b LCD_DISP_ON_CURSOR_BLINK display on, cursor on flashing             
  @return  none
 */
-extern void lcd_init(uint8_t dispAttr, uint8_t dispNum);
+extern void lcd_init(uint8_t dispAttr);
 
 
 /**

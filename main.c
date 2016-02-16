@@ -25,7 +25,6 @@
  */
 
 
-
 #define HIT_TIME 100
 
 void my_test_timer(uint8_t tmr_id) {
@@ -35,41 +34,16 @@ void my_test_timer(uint8_t tmr_id) {
 }
 
 
-
-#define lcd_e_high()    LCD_E_PORT  |=  _BV(LCD_E_PIN)
-#define lcd_e_low()     LCD_E_PORT  &= ~_BV(LCD_E_PIN)
-#define DDR(x) (*(&x - 1))
-
 int main(void) {
 
-	lcd_init(LCD_DISP_ON, 0);
-	lcd_init(LCD_DISP_ON, 1);
-	
-	
-	
-	//DDR(LCD_E_PORT)     |= _BV(LCD_E_PIN);
-	
-	//lcd_e_low();
-	lcd_gotoxy(0, 0);
-	lcd_puts_P("Hello World");
-	lcd_gotoxy(10, 1);
-	lcd_puts_P("Hello World");
-	lcd_gotoxy(20, 2);
-	lcd_puts_P("Hello World");
-	lcd_gotoxy(30, 3);
-	lcd_puts_P("Hello World");
-	
-	
-	//PORTC = 0;
-	//PORTD = 0;
-	
-	//DDRC = 0; //(0 << PC1) | (0 << PC2);
-	//DDRD = 0; //(1 << PD0) | (1 << PD1); 
-	
-	
+	lcd_select_active_display(0);
+	lcd_init(LCD_DISP_ON);
+	lcd_select_active_display(1);
+	lcd_init(LCD_DISP_ON);
+
 //	timer_init();
 //	encoder_init();
-//	menu_init();
+	menu_init();
 	
 
 	//testcode

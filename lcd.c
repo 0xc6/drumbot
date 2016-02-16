@@ -91,14 +91,7 @@ static void toggle_e(void);
 ** local functions
 */
 
-/**********************
- * Select the active display. This only works if each function that calls lcd_e_high()
- * also calls lcd_e_low() before returning, else, more than one display will be enabled at a time.
- **********************/
-static void lcd_select_active_display(uint8_t lcd_num) {
-	lcd_active_display = lcd_num;
-}
-	 
+ 
 
 
 /************************************************************************* 
@@ -338,9 +331,45 @@ static inline void lcd_newline(uint8_t pos)
 }/* lcd_newline */
 
 
+static void lcd_gotoxy_impl(uint8_t x, uint8_t y)
+{
+#if LCD_LINES==1
+    lcd_command((1<<LCD_DDRAM)+LCD_START_LINE1+x);
+#endif
+#if LCD_LINES==2
+    if ( y==0 ) 
+        lcd_command((1<<LCD_DDRAM)+LCD_START_LINE1+x);
+    else
+        lcd_command((1<<LCD_DDRAM)+LCD_START_LINE2+x);
+#endif
+#if LCD_LINES==4
+    if ( y==0 )
+        lcd_command((1<<LCD_DDRAM)+LCD_START_LINE1+x);
+    else if ( y==1)
+        lcd_command((1<<LCD_DDRAM)+LCD_START_LINE2+x);
+    else if ( y==2)
+        lcd_command((1<<LCD_DDRAM)+LCD_START_LINE3+x);
+    else /* y==3 */
+        lcd_command((1<<LCD_DDRAM)+LCD_START_LINE4+x);
+#endif
+
+}/* lcd_gotoxy */
+
+
+
 /*
 ** PUBLIC FUNCTIONS 
 */
+
+
+/**********************
+ * Select the active display. This only works if every function that calls lcd_e_high()
+ * also calls lcd_e_low() before returning, else, more than one display will be enabled at a time.
+ **********************/
+void lcd_select_active_display(uint8_t lcd_num) {
+	lcd_active_display = lcd_num;
+}
+	
 
 /*************************************************************************
 Send LCD controller instruction command
@@ -381,35 +410,6 @@ void lcd_gotoxy(uint8_t x, uint8_t y) {
 	lcd_gotoxy_impl(x, y % LCD_LINES);
 }
 
-
-
-
-
-
-
-void lcd_gotoxy_impl(uint8_t x, uint8_t y)
-{
-#if LCD_LINES==1
-    lcd_command((1<<LCD_DDRAM)+LCD_START_LINE1+x);
-#endif
-#if LCD_LINES==2
-    if ( y==0 ) 
-        lcd_command((1<<LCD_DDRAM)+LCD_START_LINE1+x);
-    else
-        lcd_command((1<<LCD_DDRAM)+LCD_START_LINE2+x);
-#endif
-#if LCD_LINES==4
-    if ( y==0 )
-        lcd_command((1<<LCD_DDRAM)+LCD_START_LINE1+x);
-    else if ( y==1)
-        lcd_command((1<<LCD_DDRAM)+LCD_START_LINE2+x);
-    else if ( y==2)
-        lcd_command((1<<LCD_DDRAM)+LCD_START_LINE3+x);
-    else /* y==3 */
-        lcd_command((1<<LCD_DDRAM)+LCD_START_LINE4+x);
-#endif
-
-}/* lcd_gotoxy */
 
 
 /*************************************************************************
@@ -527,13 +527,13 @@ Input:    dispAttr LCD_DISP_OFF            display off
                    LCD_DISP_CURSOR_BLINK   display on, cursor on flashing
 Returns:  none
 *************************************************************************/
-void lcd_init(uint8_t dispAttr, uint8_t dispNum)
+void lcd_init(uint8_t dispAttr)
 {
 	//init all enable pins
 	for (uint8_t i = 0; i < LCD_NUM_LCDS; i++) {
+		*lcd_e_port[i] &= ~_BV(lcd_e_pin[i]);
 		DDR(*lcd_e_port[i]) |= _BV(lcd_e_pin[i]);
 	}
-	lcd_active_display = dispNum;
 	
     /*
      *  Initialize LCD to 4 bit I/O mode
