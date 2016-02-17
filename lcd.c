@@ -70,15 +70,6 @@ static uint8_t lcd_active_display = 0;
 #endif
 #endif
 
-#if LCD_CONTROLLER_KS0073
-#if LCD_LINES==4
-
-#define KS0073_EXTENDED_FUNCTION_REGISTER_ON  0x2C   /* |0|010|1100 4-bit mode, extension-bit RE = 1 */
-#define KS0073_EXTENDED_FUNCTION_REGISTER_OFF 0x28   /* |0|010|1000 4-bit mode, extension-bit RE = 0 */
-#define KS0073_4LINES_MODE                    0x09   /* |0|000|1001 4 lines mode */
-
-#endif
-#endif
 
 /* 
 ** function prototypes 
@@ -112,6 +103,16 @@ static void toggle_e(void)
 #endif
 
 
+static void toggle_e_all(void) {
+	for (uint8_t i = 0; i < LCD_NUM_LCDS; i++) {
+			*lcd_e_port[i]  |=  _BV(lcd_e_pin[i]);
+	}
+	lcd_e_delay();
+	for (uint8_t i = 0; i < LCD_NUM_LCDS; i++) {
+			*lcd_e_port[i]  &= ~_BV(lcd_e_pin[i]);
+	}
+}
+
 /*************************************************************************
 Low-level function to write byte to LCD controller
 Input:    data   byte to write to LCD
@@ -119,7 +120,7 @@ Input:    data   byte to write to LCD
                  0: write instruction
 Returns:  none
 *************************************************************************/
-#if LCD_IO_MODE
+
 static void lcd_write(uint8_t data,uint8_t rs) 
 {
     unsigned char dataBits ;
@@ -187,11 +188,7 @@ static void lcd_write(uint8_t data,uint8_t rs)
         LCD_DATA3_PORT |= _BV(LCD_DATA3_PIN);
     }
 }
-#else
-#define lcd_write(d,rs) if (rs) *(volatile uint8_t*)(LCD_IO_DATA) = d; else *(volatile uint8_t*)(LCD_IO_FUNCTION) = d;
-/* rs==0 -> write instruction to LCD_IO_FUNCTION */
-/* rs==1 -> write data to LCD_IO_DATA */
-#endif
+
 
 
 /*************************************************************************
@@ -200,7 +197,6 @@ Input:    rs     1: read data
                  0: read busy flag / address counter
 Returns:  byte read from LCD controller
 *************************************************************************/
-#if LCD_IO_MODE
 static uint8_t lcd_read(uint8_t rs) 
 {
     uint8_t data;
@@ -260,11 +256,7 @@ static uint8_t lcd_read(uint8_t rs)
     }
     return data;
 }
-#else
-#define lcd_read(rs) (rs) ? *(volatile uint8_t*)(LCD_IO_DATA+LCD_IO_READ) : *(volatile uint8_t*)(LCD_IO_FUNCTION+LCD_IO_READ)
-/* rs==0 -> read instruction from LCD_IO_FUNCTION */
-/* rs==1 -> read data from LCD_IO_DATA */
-#endif
+
 
 
 /*************************************************************************
@@ -520,7 +512,7 @@ void lcd_puts_p(const char *progmem_s)
 
 
 /*************************************************************************
-Initialize display and select type of cursor 
+Initialize ALL displays and select type of cursor 
 Input:    dispAttr LCD_DISP_OFF            display off
                    LCD_DISP_ON             display on, cursor off
                    LCD_DISP_ON_CURSOR      display on, cursor on
@@ -529,53 +521,74 @@ Returns:  none
 *************************************************************************/
 void lcd_init(uint8_t dispAttr)
 {
-	//init all enable pins
-	for (uint8_t i = 0; i < LCD_NUM_LCDS; i++) {
-		*lcd_e_port[i] &= ~_BV(lcd_e_pin[i]);
-		DDR(*lcd_e_port[i]) |= _BV(lcd_e_pin[i]);
+	static uint8_t pins_initialized = 0;
+	
+	if (!pins_initialized) {
+		//init all enable pins
+		for (uint8_t i = 0; i < LCD_NUM_LCDS; i++) {
+			*lcd_e_port[i] &= ~_BV(lcd_e_pin[i]);
+			DDR(*lcd_e_port[i]) |= _BV(lcd_e_pin[i]);
+			
+		}
+		
+		/*
+		 *  Initialize LCD to 4 bit I/O mode
+		 */
+		 
+
+		/* configure all port bits as output (LCD data and control lines on different ports */
+		
+		LCD_RS_PORT    &= ~_BV(LCD_RS_PIN);
+		LCD_RW_PORT    &= ~_BV(LCD_RW_PIN);
+		LCD_DATA0_PORT &= ~_BV(LCD_DATA0_PIN);
+		LCD_DATA1_PORT &= ~_BV(LCD_DATA1_PIN);
+		LCD_DATA2_PORT &= ~_BV(LCD_DATA2_PIN);
+		LCD_DATA3_PORT &= ~_BV(LCD_DATA3_PIN);
+		
+		
+		DDR(LCD_RS_PORT)    |= _BV(LCD_RS_PIN);
+		DDR(LCD_RW_PORT)    |= _BV(LCD_RW_PIN);
+		DDR(LCD_DATA0_PORT) |= _BV(LCD_DATA0_PIN);
+		DDR(LCD_DATA1_PORT) |= _BV(LCD_DATA1_PIN);
+		DDR(LCD_DATA2_PORT) |= _BV(LCD_DATA2_PIN);
+		DDR(LCD_DATA3_PORT) |= _BV(LCD_DATA3_PIN);
+
+		pins_initialized = 1;
 	}
 	
-    /*
-     *  Initialize LCD to 4 bit I/O mode
-     */
-     
-
-	/* configure all port bits as output (LCD data and control lines on different ports */
-	DDR(LCD_RS_PORT)    |= _BV(LCD_RS_PIN);
-	DDR(LCD_RW_PORT)    |= _BV(LCD_RW_PIN);
-	DDR(LCD_DATA0_PORT) |= _BV(LCD_DATA0_PIN);
-	DDR(LCD_DATA1_PORT) |= _BV(LCD_DATA1_PIN);
-	DDR(LCD_DATA2_PORT) |= _BV(LCD_DATA2_PIN);
-	DDR(LCD_DATA3_PORT) |= _BV(LCD_DATA3_PIN);
     
     delay(LCD_DELAY_BOOTUP);             /* wait 16ms or more after power-on       */
     
     /* initial write to lcd is 8bit */
     LCD_DATA1_PORT |= _BV(LCD_DATA1_PIN);    // LCD_FUNCTION>>4;
     LCD_DATA0_PORT |= _BV(LCD_DATA0_PIN);    // LCD_FUNCTION_8BIT>>4;
-    lcd_e_toggle();
+    toggle_e_all();
     delay(LCD_DELAY_INIT);               /* delay, busy flag can't be checked here */
    
     /* repeat last command */ 
-    lcd_e_toggle();      
+    toggle_e_all();      
     delay(LCD_DELAY_INIT_REP);           /* delay, busy flag can't be checked here */
     
     /* repeat last command a third time */
-    lcd_e_toggle();      
+    toggle_e_all();      
     delay(LCD_DELAY_INIT_REP);           /* delay, busy flag can't be checked here */
 
     /* now configure for 4bit mode */
     LCD_DATA0_PORT &= ~_BV(LCD_DATA0_PIN);   // LCD_FUNCTION_4BIT_1LINE>>4
-    lcd_e_toggle();
+    toggle_e_all();
     delay(LCD_DELAY_INIT_4BIT);          /* some displays need this additional delay */
     
     /* from now the LCD only accepts 4 bit I/O, we can use lcd_command() */    
 
-    lcd_command(LCD_FUNCTION_DEFAULT);      /* function set: display lines  */
+	for (uint8_t i = 0; i < LCD_NUM_LCDS; i++) {
+		lcd_select_active_display(i);
+		
+		lcd_command(LCD_FUNCTION_DEFAULT);      /* function set: display lines  */
 
-    lcd_command(LCD_DISP_OFF);              /* display off                  */
-    lcd_clrscr();                           /* display clear                */ 
-    lcd_command(LCD_MODE_DEFAULT);          /* set entry mode               */
-    lcd_command(dispAttr);                  /* display/cursor control       */
+		lcd_command(LCD_DISP_OFF);              /* display off                  */
+		lcd_clrscr();                           /* display clear                */ 
+		lcd_command(LCD_MODE_DEFAULT);          /* set entry mode               */
+		lcd_command(dispAttr);                  /* display/cursor control       */
+	}
 
 }/* lcd_init */

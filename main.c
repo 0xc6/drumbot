@@ -36,10 +36,10 @@ void my_test_timer(uint8_t tmr_id) {
 
 int main(void) {
 
-	lcd_select_active_display(0);
-	lcd_init(LCD_DISP_ON);
-	lcd_select_active_display(1);
-	lcd_init(LCD_DISP_ON);
+	//lcd_select_active_display(0);
+	//lcd_init(LCD_DISP_ON);
+//	lcd_select_active_display(1);
+//	lcd_init(LCD_DISP_ON);
 
 //	timer_init();
 //	encoder_init();
@@ -47,6 +47,8 @@ int main(void) {
 	
 
 	//testcode
+
+	
 	
 	//init LED blinker
 //	DDRB |= (1 << PB0);
@@ -60,7 +62,8 @@ int main(void) {
 	
 	//sei(); //globally enable interrupts
 
-
+	DDRB |= (1 << PB0);
+	PORTB |= (1 << PB0);
 
 	while (1) {
 
@@ -76,12 +79,15 @@ int main(void) {
 		//ok, sleep now
 		//we need a special sequence of calls in order to ensure we miss no interrupts
 		//see also http://www.nongnu.org/avr-libc/user-manual/group__avr__sleep.html
+		
+		/*
 		cli();
 		set_sleep_mode(SLEEP_MODE_IDLE);
 		sleep_enable();
 		sei();
 		sleep_cpu();
 		sleep_disable();
+		*/
 
 	}
 
