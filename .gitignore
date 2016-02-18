@@ -1,0 +1,11 @@
+/obj
+/samples
+*.obj
+*.hex
+*.eep
+*.elf
+*.lss
+*.sym
+*.map
+.dep
+
