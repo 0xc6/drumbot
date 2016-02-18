@@ -16,7 +16,7 @@ struct tracker_data_t{
 };
 
 
-extern uint8_t tracker_get_note(uint8_t track, uint8_t note);
+extern uint8_t tracker_get_note(const struct track_t* track, uint8_t note);
 extern struct track_t* tracker_get_track(uint8_t track);
 extern void tracker_toggle_note(uint8_t track, uint8_t note);
 extern uint8_t tracker_get_position(void);

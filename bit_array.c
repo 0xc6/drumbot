@@ -22,7 +22,7 @@ void bit_arr_set(uint8_t* arr, uint8_t bitno, uint8_t val) {
 	}
 }
 
-uint8_t bit_arr_get(uint8_t* arr, uint8_t bitno) {
+uint8_t bit_arr_get(const uint8_t* arr, uint8_t const bitno) {
 	return !! (arr[bitno / 8] & (1 << (bitno % 8)));
 }
 

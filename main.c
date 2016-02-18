@@ -31,7 +31,7 @@ void my_test_timer(uint8_t tmr_id) {
 	
 	PORTB &= ~(1 << PB0);
 
-	menu_redraw();
+	menu_draw();
 	PORTB |= (1 << PB0);
 	
 }
