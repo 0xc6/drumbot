@@ -7,18 +7,23 @@
 /*                                                                      */
 /************************************************************************/
 #include "encoder.h"
+#include <avr/pgmspace.h>
  
  
 volatile int8_t enc_delta;          // -128 ... 127
 static int8_t last;
- 
+
+// Dekodertabelle für wackeligen Rastpunkt
+// halbe Auflösung
+const int8_t table[16] PROGMEM = {0,0,-1,0,0,0,0,1,1,0,0,0,0,-1,0,0};
+
  
 void encoder_init( void )
 {
 	int8_t new;
 	
  	// Activate internal pull-ups for encoder pins
-	PORTC |= (1 << PC0) | (1 << PC1);
+	ENCODER_PORT |= (1 << ENCODER_PIN_PHASE_A) | (1 << ENCODER_PIN_PHASE_B);
 	
 	new = 0;
 	if( ENCODER_PHASE_A ) {
@@ -42,17 +47,12 @@ void encoder_init( void )
  
 ISR( TIMER0_OVF_vect )
 {
-  int8_t new = 0, diff = 0;
+    static int8_t last=0;           // alten Wert speichern
  
-  if( ENCODER_PHASE_A )
-    new = 3;
-  if( ENCODER_PHASE_B )
-    new ^= 1;                   // convert gray to binary
-  diff = last - new;                // difference last - new
-  if( diff & 1 ){               // bit 0 = value (1)
-    last = new;                 // store new as next last
-    enc_delta += (diff & 2) - 1;        // bit 1 = direction (+/-)
-  }
+    last = (last << 2)  & 0x0F;
+    if (ENCODER_PHASE_A) last |=2;
+    if (ENCODER_PHASE_B) last |=1;
+    enc_delta += pgm_read_byte(&table[last]);
 }
  
  

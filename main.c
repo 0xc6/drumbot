@@ -6,7 +6,6 @@
  */
 
 #include <stdlib.h>
-#include <util/delay.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
 #include <avr/io.h>
@@ -28,21 +27,21 @@
 #define HIT_TIME 100
 
 void my_test_timer(uint8_t tmr_id) {
+	timer_set(TIMER_BEAT, 250);
+	
+	PORTB &= ~(1 << PB0);
 
-
+	menu_redraw();
+	PORTB |= (1 << PB0);
 	
 }
 
 
 int main(void) {
 
-	//lcd_select_active_display(0);
-	//lcd_init(LCD_DISP_ON);
-//	lcd_select_active_display(1);
-//	lcd_init(LCD_DISP_ON);
 
-//	timer_init();
-//	encoder_init();
+	timer_init();
+	encoder_init();
 	menu_init();
 	
 
@@ -51,24 +50,23 @@ int main(void) {
 	
 	
 	//init LED blinker
-//	DDRB |= (1 << PB0);
-//	timer_register(TIMER_LED, &my_test_timer);
-//	my_test_timer(TIMER_LED);
+	DDRB |= (1 << PB0);
+	timer_register(TIMER_BEAT, &my_test_timer);
+	my_test_timer(TIMER_BEAT);
 	
 	
 	
 	
 	// end testcode
 	
-	//sei(); //globally enable interrupts
+	sei(); //globally enable interrupts
 
-	DDRB |= (1 << PB0);
-	PORTB |= (1 << PB0);
+
 
 	while (1) {
 
 		//see if we need to run any timer call-backs
-		//timer_check();
+		timer_check();
 		
 		//run encoder events
 		//encoder_check();
@@ -79,15 +77,14 @@ int main(void) {
 		//ok, sleep now
 		//we need a special sequence of calls in order to ensure we miss no interrupts
 		//see also http://www.nongnu.org/avr-libc/user-manual/group__avr__sleep.html
-		
-		/*
+	
 		cli();
 		set_sleep_mode(SLEEP_MODE_IDLE);
 		sleep_enable();
 		sei();
 		sleep_cpu();
 		sleep_disable();
-		*/
+		
 
 	}
 

@@ -15,10 +15,13 @@
 #ifndef ENCODER_H_
 #define ENCODER_H_
 
-#define ENCODER_PORT PINC
+#define ENCODER_PORT		PORTD
+#define ENCODER_PORT_IN 	PIND
 
-#define ENCODER_PHASE_A     (ENCODER_PORT & 1<<PC0)
-#define ENCODER_PHASE_B     (ENCODER_PORT & 1<<PC1)
+#define ENCODER_PIN_PHASE_A PD2
+#define ENCODER_PIN_PHASE_B PD3
+#define ENCODER_PHASE_A     (ENCODER_PORT_IN & 1<<ENCODER_PIN_PHASE_A)
+#define ENCODER_PHASE_B     (ENCODER_PORT_IN & 1<<ENCODER_PIN_PHASE_B)
 
 int8_t encode_read1( void );         // read single step encoders
 int8_t encode_read2( void );         // read two step encoders

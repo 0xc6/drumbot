@@ -417,7 +417,7 @@ Clear display and set cursor to home position
 *************************************************************************/
 void lcd_clrscr(void)
 {
-    lcd_command(1<<LCD_CLR);
+	lcd_command(1<<LCD_CLR);
 }
 
 
@@ -586,9 +586,18 @@ void lcd_init(uint8_t dispAttr)
 		lcd_command(LCD_FUNCTION_DEFAULT);      /* function set: display lines  */
 
 		lcd_command(LCD_DISP_OFF);              /* display off                  */
-		lcd_clrscr();                           /* display clear                */ 
+		lcd_clrscr();                      /* display clear                */ 
 		lcd_command(LCD_MODE_DEFAULT);          /* set entry mode               */
 		lcd_command(dispAttr);                  /* display/cursor control       */
 	}
 
 }/* lcd_init */
+
+
+
+void lcd_clrscr_all() {
+	for (uint8_t i = 0; i < LCD_NUM_LCDS; i++) {
+		lcd_select_active_display(i);
+		lcd_command(1<<LCD_CLR);
+	}
+}

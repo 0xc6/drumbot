@@ -22,8 +22,8 @@ uint8_t timer_has_elapsed(uint8_t tmr_num);
 uint16_t timer_stop(uint8_t tmr_num);
 void timer_check(void);
 
-#define NUM_TIMERS 1
-#define TIMER_LED 0 //this timer is used to blink the red code led
+#define NUM_TIMERS 2
+#define TIMER_BEAT 0 //this timer is used for the drum track
 #define TIMER_PRIMARY_ENCODER 1
 
 #define TIMER_RESOLUTION 10 //milliseconds

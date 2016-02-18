@@ -384,4 +384,6 @@ extern void lcd_data(uint8_t data);
 
 /**@}*/
 
+extern void lcd_clrscr_all(void);
+
 #endif //LCD_H
