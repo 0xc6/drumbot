@@ -24,35 +24,38 @@
  */
 
 
-#define HIT_TIME 100
 
+/*
 void my_test_timer(uint8_t tmr_id) {
-	timer_set(TIMER_BEAT, 250);
+	//timer_set(TIMER_TRACKER_BPM, 250);
 	
 	PORTB &= ~(1 << PB0);
 
 	menu_draw();
 	PORTB |= (1 << PB0);
 	
-}
+}*/
 
 
 int main(void) {
 
+	DDRB |= (1 << PB0);
+
 
 	timer_init();
 	encoder_init();
-	menu_init();
 	
+	menu_init(&encode_read1);
+	tracker_init();
 
 	//testcode
 
 	
 	
 	//init LED blinker
-	DDRB |= (1 << PB0);
-	timer_register(TIMER_BEAT, &my_test_timer);
-	my_test_timer(TIMER_BEAT);
+	
+	//timer_register(TIMER_TRACKER_BPM, &my_test_timer);
+	//my_test_timer(TIMER_TRACKER_BPM);
 	
 	
 	

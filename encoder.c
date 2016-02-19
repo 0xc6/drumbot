@@ -52,7 +52,7 @@ ISR( TIMER0_OVF_vect )
     last = (last << 2)  & 0x0F;
     if (ENCODER_PHASE_A) last |=2;
     if (ENCODER_PHASE_B) last |=1;
-    enc_delta += pgm_read_byte(&table[last]);
+    enc_delta -= pgm_read_byte(&table[last]);
 }
  
  

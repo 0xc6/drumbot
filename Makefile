@@ -161,6 +161,9 @@ CFLAGS += $(patsubst %,-I%,$(EXTRAINCDIRS))
 CFLAGS += $(CSTANDARD)
 CFLAGS += -fms-extensions
 
+# CG: output assembly
+# CFLAGS += -adhlns
+
 
 #---------------- Compiler Options C++ ----------------
 #  -g*:          generate debugging information
