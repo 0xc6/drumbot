@@ -1,9 +1,11 @@
 #include "menu.h"
 #include "bit_array.h"
 #include "encoder.h"
+#include "button.h"
 #include "tracker.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 
 
@@ -52,6 +54,15 @@ static const __flash uint8_t menu_chars[DISP_NUM_SPECIAL_CHARS][DISP_CHAR_HEIGHT
 		0b11011,
 		0b11011,
 		0b11011
+	},
+	{
+		0b11011, //cursor symbol
+		0b10001,
+		0b00000,
+		0b00000,
+		0b00000,
+		0b10001,
+		0b11011
 	}
 };
 
@@ -60,11 +71,9 @@ static const __flash uint8_t menu_chars[DISP_NUM_SPECIAL_CHARS][DISP_CHAR_HEIGHT
 static uint8_t menu_cursor;
 void update_cursor(void) {
 	static uint8_t cursor_factor = 0;
-	
 	if (cursor_factor == 0) {
 		menu_cursor = !menu_cursor;
 	}
-	
 	cursor_factor++;
 	cursor_factor %= MENU_CURSOR_BLINK_FACTOR;
 }
@@ -74,76 +83,160 @@ void update_cursor(void) {
 
 //functions for inputs
 
-static void channel_draw(struct input_t* self) {
-	struct channel_input_t* s = (struct channel_input_t*) self;
+//channel input
+static void channel_input_draw(struct channel_input_t* self) {
 
-	DISP_GOTOXY(s->coord_x, s->coord_y);
-	DISP_PUTS(s->label);
-	DISP_PUTS_P(":  ");
+	DISP_GOTOXY(self->coord_x, self->coord_y);
+	DISP_PUTS(self->label);
+	DISP_PUTS_P(" ");
 	
-	if (s->cursor_pos == -1 && s->flags.is_focused && !menu_cursor) { //cursor on start/stop
-		DISP_PUTC(' ');
+	if (self->cursor_pos == -1 && self->flags.is_focused && !menu_cursor) { //cursor on start/stop
+		DISP_PUTC(DISP_SS_CURSOR);
 	}
 	else {
-		if (s->track->flags.is_enabled) {
+		if (self->track->flags.is_enabled) {
 			DISP_PUTC(DISP_SS_PLAY);
 		}
 		else {
 			DISP_PUTC(DISP_SS_PAUSE);
 		}
 	}
-	DISP_PUTS_P(" |");
+	DISP_PUTS_P(" ");
+	DISP_PUTC(DISP_SS_QSEP);
 	
 	for (uint8_t cur_note = 0; cur_note < TRACKER_NOTES_PER_TRACK; cur_note++) {
-		if (cur_note == s->cursor_pos && s->flags.is_focused && !menu_cursor) {
-			DISP_PUTC(' ');
+		uint8_t has_note = !! tracker_get_note(self->track, cur_note);
+		uint8_t track_enabled = tracker_get_track_state(self->track) == TRACKER_STATE_RUN;
+		uint8_t on_pos = tracker_get_position() == cur_note;
+		
+		if (cur_note == self->cursor_pos && self->flags.is_focused && menu_cursor) {
+			DISP_PUTC(DISP_SS_CURSOR);
 		}
-		else {
-			if (tracker_get_note(s->track, cur_note)) {
-				if (tracker_get_position() != cur_note) {
-					lcd_putc(DISP_SS_NOTE);
-				}
-				else {
-					lcd_putc(DISP_SS_BLOCK);
-				}
+		else {			
+			if (has_note && (!track_enabled || !on_pos)) {
+				DISP_PUTC(DISP_SS_NOTE);
 			}
-			else {
-				if (tracker_get_position() != cur_note) {
-					lcd_putc(DISP_SS_NO_NOTE);
-				}
-				else {
-					lcd_putc(DISP_SS_BLOCK);
-				}
+			else if (!has_note && (!track_enabled || !on_pos)) {
+				DISP_PUTC(DISP_SS_NO_NOTE);
 			}
-			
-			if ((cur_note + 1) % 4 == 0) {
-				lcd_putc(DISP_SS_QSEP);
+			else if (track_enabled && on_pos) {
+				DISP_PUTC(DISP_SS_BLOCK);
 			}
+		}
+		if ((cur_note + 1) % 4 == 0) {
+			DISP_PUTC(DISP_SS_QSEP);
 		}
 	}
-
 }
 
 
-uint8_t channel_input_event(struct input_t* self, struct event_args_t* ev_args) {
-	struct channel_input_t* s = (struct channel_input_t*) self;
-	uint8_t ret = MENU_INPUT_EVENT_RESULT_NONE;
-	
+static uint8_t channel_input_event(struct channel_input_t* self, struct event_args_t* ev_args) {
+	uint8_t ret = MENU_INPUT_EVENT_RESULT_NONE; //default result
+	const int8_t BTN_START_STOP = -1; //cursor pos of start/stop control
 	
 	switch (ev_args->ev_type) {
 		case MENU_INPUT_EVENT_FOCUS_LEFT:
-			s->flags.is_focused = 1;
-			s->cursor_pos = 0;
-		
+			self->flags.is_focused = 1;
+			self->cursor_pos = BTN_START_STOP;
 			break;
+			
+		case MENU_INPUT_EVENT_FOCUS_RIGHT:
+			self->flags.is_focused = 1;
+			self->cursor_pos = TRACKER_NOTES_PER_TRACK - 1;
+			break;
+			
 		case MENU_INPUT_EVENT_ENCODER:
-			s->cursor_pos += ev_args->args.encoder_event.increment;
+			self->cursor_pos += ev_args->args.encoder_event.increment;
+			
+			if (self->cursor_pos > TRACKER_NOTES_PER_TRACK - 1) {
+				ret = MENU_INPUT_EVENT_RESULT_BLUR_RIGHT;
+				self->flags.is_focused = 0;
+			}
+			if (self->cursor_pos < BTN_START_STOP) {
+				 ret = MENU_INPUT_EVENT_RESULT_BLUR_LEFT;
+				 self->flags.is_focused = 0;
+			}
 			break;
-		
+		case MENU_INPUT_EVENT_BUTTON_UP:
+			if (self->cursor_pos == BTN_START_STOP) {
+				tracker_set_track_state(self->track, TRACKER_STATE_TOGGLE);
+			}
+			else { //cursor on note
+				tracker_toggle_note(self->track, self->cursor_pos);
+			}
+			break;
 	}
 	
 	return ret;
 }
+
+//functions for number input
+static void number_input_draw(struct number_input_t* self) {
+
+	//how much space is reserved for drawing the number
+	//warning: you may need to adjust this in accordance to min_value and max_value
+	const uint8_t NUM_WIDTH = 3; 
+	char num_buf[NUM_WIDTH + 1];
+	
+	memset(num_buf, ' ', NUM_WIDTH);
+	num_buf[NUM_WIDTH] = '\0';
+	
+	DISP_GOTOXY(self->coord_x, self->coord_y);
+	DISP_PUTS(self->label);
+	
+	uint8_t frame_visible = !self->flags.is_focused
+		|| (self->flags.is_focused && !self->flags.is_editing && menu_cursor);
+	uint8_t value_visible = !self->flags.is_editing 
+		|| (self->flags.is_editing && menu_cursor);
+	
+	frame_visible ? DISP_PUTC('[') :DISP_PUTC(' ');
+	
+	if (value_visible) {
+		ltoa(self->value, num_buf, 10);
+	}
+	
+	DISP_PUTS(num_buf);
+	frame_visible ? DISP_PUTC(']') :DISP_PUTC(' ');
+}
+
+static uint8_t number_input_event(struct number_input_t* self, struct event_args_t* ev_args) {
+	uint8_t ret = MENU_INPUT_EVENT_RESULT_NONE; //default result
+	
+	switch (ev_args->ev_type) {
+		case MENU_INPUT_EVENT_FOCUS_LEFT:
+		case MENU_INPUT_EVENT_FOCUS_RIGHT:
+			self->flags.is_focused = 1;
+			break;
+		case MENU_INPUT_EVENT_BUTTON_UP:
+			self->flags.is_editing = !self->flags.is_editing;
+			break;
+		case MENU_INPUT_EVENT_ENCODER:
+			if (self->flags.is_editing) {
+				self->value += ev_args->args.encoder_event.increment;
+				
+				if (self->value < self->min_value) {
+					self->value = self->min_value;
+				}
+				if (self->value > self->max_value) {
+					self->value = self->max_value;
+				}
+				self->update(self->value);
+			}
+			else { //not editing -> will blur
+				if (ev_args->args.encoder_event.increment < 0) {
+					ret = MENU_INPUT_EVENT_RESULT_BLUR_LEFT;
+				}
+				else {// encoder turned right
+					ret = MENU_INPUT_EVENT_RESULT_BLUR_RIGHT;
+				}
+				self->flags.is_focused = 0;
+			}
+			break;
+	}
+	return ret;
+}
+
+
 
 // functions for screens
 
@@ -158,9 +251,40 @@ static void screen_draw(struct screen_t* self) {
 }
 	
 static uint8_t screen_event(struct screen_t* self, struct event_args_t* ev_args) {
-	return self->focused_input->event(self->focused_input, ev_args);
+	uint8_t ev_result;
+	
+	//pass the event to the focused input
+	ev_result = self->focused_input->event(self->focused_input, ev_args);
+
+	//we might need to send a second event
+	struct event_args_t my_ev;
+	
+	switch (ev_result) {
+		case MENU_INPUT_EVENT_RESULT_BLUR_LEFT:
+			my_ev.ev_type = MENU_INPUT_EVENT_FOCUS_RIGHT;
+		
+			self->focused_input = self->focused_input->prev_input;
+			self->focused_input->event(self->focused_input, &my_ev);
+		break;
+		
+		case MENU_INPUT_EVENT_RESULT_BLUR_RIGHT:
+			my_ev.ev_type = MENU_INPUT_EVENT_FOCUS_LEFT;
+			
+			self->focused_input = self->focused_input->next_input;
+			self->focused_input->event(self->focused_input, &my_ev);
+		break;
+		
+	}
+	
+	return MENU_INPUT_EVENT_RESULT_NONE;
 }
 
+// functions for the menu
+
+static void menu_event(struct menu_t* self, struct event_args_t* ev_args) {
+	// just forward it
+	self->cur_screen->event(self->cur_screen, ev_args);
+}
 
 // the big initialization function
 static struct menu_t menu;
@@ -169,41 +293,67 @@ void menu_create(void) {
 	static struct channel_input_t channel_1;
 	static struct channel_input_t channel_2;
 	static struct channel_input_t channel_3;
-	static struct channel_input_t channel_4 ;
-
+	static struct channel_input_t channel_4;
+	static struct number_input_t bpm_input;
+	
 	channel_1.coord_x = 0;
 	channel_1.coord_y = 0;
-	channel_1.label = "CH1";
+	channel_1.label = "CH1:";
 	channel_1.track = tracker_get_track(0);
-	channel_1.draw = &channel_draw;
-	channel_1.event = &channel_input_event;
+	channel_1.prev_input = (struct input_t*) &channel_4;
+	channel_1.next_input = (struct input_t*) &bpm_input;
+	channel_1.draw = (void (*)(struct input_t*)) &channel_input_draw;
+	channel_1.event = (uint8_t (*)(struct input_t*, struct event_args_t*)) &channel_input_event;
+	
+	bpm_input.label = "BPM:";
+	bpm_input.coord_x = 30;
+	bpm_input.coord_y = 0;
+	bpm_input.prev_input = (struct input_t*) &channel_1;
+	bpm_input.next_input = (struct input_t*) &channel_2;
+	bpm_input.draw = (void (*)(struct input_t*)) &number_input_draw;
+	bpm_input.event = (uint8_t (*)(struct input_t*, struct event_args_t*)) &number_input_event;
+	bpm_input.min_value = 30;
+	bpm_input.max_value = 120;
+	bpm_input.value = TRACKER_BPM_INITIAL;
+	bpm_input.update = &tracker_set_bpm;
+	
 	
 	channel_2.coord_x = 0;
 	channel_2.coord_y = 1;
-	channel_2.label = "CH2";
+	channel_2.label = "CH2:";
 	channel_2.track = tracker_get_track(1);
-	channel_2.draw = &channel_draw;
-	channel_2.event = &channel_input_event;
+	channel_2.prev_input = (struct input_t*) &bpm_input;
+	channel_2.next_input = (struct input_t*) &channel_3;
+	channel_2.draw = (void (*)(struct input_t*)) &channel_input_draw;
+	channel_2.event = (uint8_t (*)(struct input_t*, struct event_args_t*)) &channel_input_event;
 	
 	channel_3.coord_x = 0;
 	channel_3.coord_y = 2;
-	channel_3.label = "CH3";
+	channel_3.label = "CH3:";
 	channel_3.track = tracker_get_track(2);
-	channel_3.draw = &channel_draw;
-	channel_3.event = &channel_input_event;
+	channel_3.prev_input = (struct input_t*) &channel_2;
+	channel_3.next_input = (struct input_t*) &channel_4;
+	channel_3.draw = (void (*)(struct input_t*)) &channel_input_draw;
+	channel_3.event = (uint8_t (*)(struct input_t*, struct event_args_t*)) &channel_input_event;
 
 	channel_4.coord_x = 0;
 	channel_4.coord_y = 3;
-	channel_4.label = "CH4";
+	channel_4.label = "CH4:";
 	channel_4.track = tracker_get_track(3);
-	channel_4.draw = &channel_draw;
-	channel_4.event = &channel_input_event;
+	channel_4.prev_input = (struct input_t*) &channel_3;
+	channel_4.next_input = (struct input_t*) &channel_1;
+	channel_4.draw = (void (*)(struct input_t*)) &channel_input_draw;
+	channel_4.event = (uint8_t (*)(struct input_t*, struct event_args_t*)) &channel_input_event;
+
+
 
 	static struct input_t* track_screen_inputs[] = {
 		(struct input_t*) &channel_1,
+		(struct input_t*) &bpm_input,
 		(struct input_t*) &channel_2,
 		(struct input_t*) &channel_3,
 		(struct input_t*) &channel_4,
+		
 		NULL
 	};
 
@@ -222,6 +372,7 @@ void menu_create(void) {
 
 	menu.screen = menu_screens;
 	menu.cur_screen = &track_screen;
+	menu.event = &menu_event;
 }
 
 
@@ -232,7 +383,7 @@ void menu_create(void) {
 
 
 void menu_timer_cb(uint8_t timer_id) {
-		PORTB ^= (1 << PB0);
+
 	timer_set(TIMER_MENU, MENU_REFRESH_INTERVAL);
 	
 	int8_t enc_val = menu.encoder_fn();
@@ -241,7 +392,7 @@ void menu_timer_cb(uint8_t timer_id) {
 			.ev_type = MENU_INPUT_EVENT_ENCODER,
 			.args.encoder_event.increment = enc_val
 		};
-		menu.cur_screen->event(menu.cur_screen, &enc_ev);
+		menu.event(&menu, &enc_ev);
 	}
 	
 	
@@ -249,7 +400,19 @@ void menu_timer_cb(uint8_t timer_id) {
 	update_cursor();
 } 
 
-void menu_init(int8_t (*encoder_fn)(void)) {
+
+void menu_on_button_up_cb(uint8_t button_id, uint16_t duration) {
+	struct event_args_t btn_ev = {
+		.ev_type = MENU_INPUT_EVENT_BUTTON_UP,
+		.args.button_event = {
+			.btn_id = button_id,
+			.duration = duration
+		}
+	};
+	menu.event(&menu, &btn_ev);
+}
+
+void menu_init() {
 	lcd_init(LCD_DISP_ON);
 
 	for (uint8_t lcd_num = 0; lcd_num < LCD_NUM_LCDS; lcd_num++) {
@@ -262,13 +425,10 @@ void menu_init(int8_t (*encoder_fn)(void)) {
 				lcd_data(menu_chars[cur_char][cur_line]);
 			}
 		}
-				
 		lcd_clrscr();
 	}
 	
 	menu_create();
-	
-	menu.encoder_fn = encoder_fn;
 	
 	//focus the first element on the screen
 	auto struct event_args_t ev = {
@@ -276,10 +436,10 @@ void menu_init(int8_t (*encoder_fn)(void)) {
 	};
 	menu.cur_screen->input[0]->event(menu.cur_screen->input[0], &ev);
 	
-
-
 	
-
+	//set up menu event emitters
+	menu.encoder_fn = &encode_read1;
+	button_register(NULL, &menu_on_button_up_cb);
 		
 	timer_register(TIMER_MENU, &menu_timer_cb);
 	menu_timer_cb(TIMER_MENU);

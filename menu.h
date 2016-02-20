@@ -21,21 +21,22 @@
 #define DISP_SS_QSEP '|' // quarter separator for tracks
 #define DISP_SS_PLAY '\x08'
 #define DISP_SS_PAUSE '\x0C'
+#define DISP_SS_CURSOR '\x0D' // used to show blinking cursor
 
 #define DISP_CHAR_WIDTH 5
 #define DISP_CHAR_HEIGHT 7
-#define DISP_NUM_SPECIAL_CHARS 5
+#define DISP_NUM_SPECIAL_CHARS 6
 
 #define DISP_GOTOXY(x,y) lcd_gotoxy(x,y)
 #define DISP_PUTC(c) lcd_putc(c)
 #define DISP_PUTS(s) lcd_puts(s)
 #define DISP_PUTS_P(s) lcd_puts_P(s)
 
-#define MENU_REFRESH_INTERVAL 333 //how often is the menu redrawn (ms)
+#define MENU_REFRESH_INTERVAL 300 //how often is the menu redrawn (ms)
 #define MENU_CURSOR_BLINK_FACTOR 1 //every X times the display is refreshed the cursor should change state
 
 #define MENU_INPUT_EVENT_ENCODER 		0
-#define MENU_INPUT_EVENT_BUTTON 		1
+#define MENU_INPUT_EVENT_BUTTON_UP 		1
 #define MENU_INPUT_EVENT_FOCUS_LEFT		2
 #define MENU_INPUT_EVENT_FOCUS_RIGHT 	3
 
@@ -66,6 +67,8 @@ struct input_t {
 		uint8_t is_editing: 1;
 	} flags;
 	
+	struct input_t* next_input;
+	struct input_t* prev_input;
 	void (*draw)(struct input_t* self);
 	uint8_t (*event) (struct input_t* self, struct event_args_t* ev_args);
 };
@@ -73,7 +76,7 @@ struct input_t {
 //subclasses input_t
 struct channel_input_t {
 	struct input_t;
-	const struct track_t *track;
+	struct track_t *track;
 	char* label;
 	int8_t cursor_pos;
 };
@@ -82,9 +85,10 @@ struct channel_input_t {
 struct number_input_t {
 	struct input_t;
 	char* label;
-	uint8_t value;
-	uint8_t min_value;
-	uint8_t max_value;
+	int16_t value;
+	int16_t min_value;
+	int16_t max_value;
+	void (*update)(int16_t val);
 };
 
 
@@ -102,13 +106,13 @@ struct menu_t {
 	struct screen_t* cur_screen;
 	int8_t (*encoder_fn) (void);
 	
-	void (*event) (struct input_t* self, struct event_args_t* ev_args);
+	void (*event) (struct menu_t* self, struct event_args_t* ev_args);
 	void (*on_btn_up) (uint8_t btn, uint8_t duration);
 };
 
 
 
-extern void menu_init(int8_t (*encoder_fn)(void));
+extern void menu_init(void);
 
 extern void menu_redraw(void);
 

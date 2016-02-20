@@ -13,7 +13,7 @@
 #include "timer.h"
 
 
-struct timer_t timer_data[NUM_TIMERS];
+struct timer_t timer_data[TIMER_NUM_TIMERS];
 
 void timer_init(void) {
 	TCNT2 = 0x00; //counter value to zero
@@ -54,7 +54,7 @@ uint8_t timer_has_elapsed(uint8_t tmr_num) {
 void timer_check(void) {
 	uint8_t run_cb;
 
-	for (uint8_t i = 0; i < NUM_TIMERS; i++) {
+	for (uint8_t i = 0; i < TIMER_NUM_TIMERS; i++) {
 
 	    ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
 	    	run_cb = timer_data[i].tmr_val == 0  //timer has just elapsed
@@ -73,7 +73,7 @@ void timer_check(void) {
 
 //triggers every TIMER_RESOLUTION ms
 ISR(TIMER2_COMP_vect) {
-	for (uint8_t i = 0; i < NUM_TIMERS; i++) {
+	for (uint8_t i = 0; i < TIMER_NUM_TIMERS; i++) {
 		if (timer_data[i].tmr_val > 0) {
 			timer_data[i].tmr_val--;
 		}

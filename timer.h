@@ -22,11 +22,15 @@ uint8_t timer_has_elapsed(uint8_t tmr_num);
 uint16_t timer_stop(uint8_t tmr_num);
 void timer_check(void);
 
-#define NUM_TIMERS 4
-#define TIMER_TRACKER_BEAT 0 //used for the drum track
-#define TIMER_TRACKER_RELEASE 1 //used to release the solenoids after engaging 
-#define TIMER_PRIMARY_ENCODER 2 //used to poll the encoder
-#define TIMER_MENU 3 // used to redraw the menu on the LCD
+enum {
+TIMER_TRACKER_BEAT, //used for the drum track
+TIMER_TRACKER_RELEASE,  //used to release the solenoids after engaging 
+TIMER_BUTTON_ENCODER, //poll encoder button
+TIMER_MENU, // used to redraw the menu on the LCD
+
+TIMER_NUM_TIMERS, //how many timers there are
+};
+
 
 #define TIMER_RESOLUTION 10 //milliseconds
 #define TIMER_MS_TO_TICKS(v) ((v) / TIMER_RESOLUTION)

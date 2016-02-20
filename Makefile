@@ -78,7 +78,7 @@ OBJDIR = obj
 
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC = $(TARGET).c timer.c bit_array.c tracker.c lcd.c encoder.c menu.c 
+SRC = $(TARGET).c timer.c bit_array.c encoder.c button.c tracker.c lcd.c  menu.c 
 
 
 # List C++ source files here. (C dependencies are automatically generated.)

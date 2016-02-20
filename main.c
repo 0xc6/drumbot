@@ -12,6 +12,7 @@
 
 #include "timer.h"
 #include "encoder.h"
+#include "button.h"
 #include "lcd.h"
 #include "menu.h"
 #include "main.h"
@@ -43,9 +44,10 @@ int main(void) {
 
 
 	timer_init();
+	button_init();
 	encoder_init();
 	
-	menu_init(&encode_read1);
+	menu_init();
 	tracker_init();
 
 	//testcode
@@ -71,11 +73,9 @@ int main(void) {
 		//see if we need to run any timer call-backs
 		timer_check();
 		
-		//run encoder events
-		//encoder_check();
 
 		//have any buttons been pressed?
-		//button_check();
+		button_check();
 
 		//ok, sleep now
 		//we need a special sequence of calls in order to ensure we miss no interrupts
