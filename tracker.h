@@ -1,6 +1,11 @@
 #ifndef TRACKER_H_
 #define TRACKER_H_
 #include <stdint.h>
+#include <avr/io.h>
+
+
+#include "timer.h"
+#include "bit_array.h"
 
 // Tracker definitions
 
@@ -12,11 +17,13 @@
 #define TRACKER_STATE_TOGGLE 2
 
 #define TRACKER_BPM_INITIAL 100
+#define TRACKER_HIT_TIME 75 //how long (ms) the actuators engage to play a note
 
 
-struct tracker_data_t{
+struct tracker_data_t {
 	struct track_t {
 		uint8_t note[TRACKER_NOTES_PER_TRACK / sizeof(uint8_t)];
+		void (*actuator_engage)(void);
 		struct {
 			uint8_t is_enabled: 1;
 		} flags;

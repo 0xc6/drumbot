@@ -40,8 +40,6 @@ void my_test_timer(uint8_t tmr_id) {
 
 int main(void) {
 
-	DDRB |= (1 << PB0);
-
 
 	timer_init();
 	button_init();

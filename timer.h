@@ -11,12 +11,16 @@
 
 struct timer_t { //auto-initialized
 	volatile uint16_t tmr_val;
+	volatile struct {
+		uint8_t is_active : 1;
+		uint8_t is_isr: 1;
+	} flags;
 	volatile uint8_t tmr_active;
 	void (*tmr_cb)(uint8_t id);
 };
 
 void timer_init(void);
-void timer_register(uint8_t tmr_num, void (*cb)(uint8_t id));
+void timer_register(uint8_t tmr_num, uint8_t run_as_isr, void (*cb)(uint8_t id));
 void timer_set(uint8_t tmr_num, uint16_t val);
 uint8_t timer_has_elapsed(uint8_t tmr_num);
 uint16_t timer_stop(uint8_t tmr_num);

@@ -101,7 +101,7 @@ static void channel_input_draw(struct channel_input_t* self) {
 			DISP_PUTC(DISP_SS_PAUSE);
 		}
 	}
-	DISP_PUTS_P(" ");
+	DISP_PUTC(' ');
 	DISP_PUTC(DISP_SS_QSEP);
 	
 	for (uint8_t cur_note = 0; cur_note < TRACKER_NOTES_PER_TRACK; cur_note++) {
@@ -183,16 +183,21 @@ static void number_input_draw(struct number_input_t* self) {
 	
 	DISP_GOTOXY(self->coord_x, self->coord_y);
 	DISP_PUTS(self->label);
+	DISP_PUTC(' ');
 	
 	uint8_t frame_visible = !self->flags.is_focused
-		|| (self->flags.is_focused && !self->flags.is_editing && menu_cursor);
+		|| (self->flags.is_focused && menu_cursor)
+		|| (self->flags.is_editing);
 	uint8_t value_visible = !self->flags.is_editing 
 		|| (self->flags.is_editing && menu_cursor);
 	
 	frame_visible ? DISP_PUTC('[') :DISP_PUTC(' ');
 	
-	if (value_visible) {
-		ltoa(self->value, num_buf, 10);
+	if (value_visible) { 
+		ltoa(self->value, num_buf, 10); //print number right aligned
+		for (uint8_t i = 0; i < NUM_WIDTH - strlen(num_buf); i++) {
+			DISP_PUTC(' ');
+		}	
 	}
 	
 	DISP_PUTS(num_buf);
@@ -441,7 +446,7 @@ void menu_init() {
 	menu.encoder_fn = &encode_read1;
 	button_register(NULL, &menu_on_button_up_cb);
 		
-	timer_register(TIMER_MENU, &menu_timer_cb);
+	timer_register(TIMER_MENU, 0, &menu_timer_cb);
 	menu_timer_cb(TIMER_MENU);
 	
 }
