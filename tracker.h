@@ -17,7 +17,7 @@
 #define TRACKER_STATE_TOGGLE 2
 
 #define TRACKER_BPM_INITIAL 100
-#define TRACKER_HIT_TIME 75 //how long (ms) the actuators engage to play a note
+#define TRACKER_HIT_TIME 100 //how long (ms) the actuators engage to play a note
 
 
 struct tracker_data_t {
@@ -28,6 +28,9 @@ struct tracker_data_t {
 			uint8_t is_enabled: 1;
 		} flags;
 	} track[TRACKER_NUMBER_OF_TRACKS];
+	struct {
+		uint8_t is_enabled: 1;
+	} flags;
 	uint8_t position;
 	uint8_t bpm;
 	uint16_t interval; //bpm converted to milliseconds

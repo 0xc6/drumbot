@@ -27,12 +27,13 @@ uint16_t timer_stop(uint8_t tmr_num);
 void timer_check(void);
 
 enum {
-TIMER_TRACKER_BEAT, //used for the drum track
-TIMER_TRACKER_RELEASE,  //used to release the solenoids after engaging 
-TIMER_BUTTON_ENCODER, //poll encoder button
-TIMER_MENU, // used to redraw the menu on the LCD
+	TIMER_TRACKER_BEAT, //used for the drum track
+	TIMER_TRACKER_RELEASE,  //used to release the solenoids after engaging 
+	TIMER_BUTTON_ENCODER, //poll encoder button
+	TIMER_BUTTON_MASTER_CONTROL, //start/stop button
+	TIMER_MENU, // used to redraw the menu on the LCD
 
-TIMER_NUM_TIMERS, //how many timers there are
+	TIMER_NUM_TIMERS, //how many timers there are
 };
 
 

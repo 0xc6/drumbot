@@ -257,28 +257,36 @@ static void screen_draw(struct screen_t* self) {
 	
 static uint8_t screen_event(struct screen_t* self, struct event_args_t* ev_args) {
 	uint8_t ev_result;
-	
-	//pass the event to the focused input
-	ev_result = self->focused_input->event(self->focused_input, ev_args);
 
-	//we might need to send a second event
-	struct event_args_t my_ev;
+	//some events are handled by the screen class directly
+	if (ev_args->ev_type == MENU_INPUT_EVENT_BUTTON_UP &&
+		ev_args->args.button_event.btn_id == BUTTON_MASTER_CONTROL) {
+			tracker_set_global_state(TRACKER_STATE_TOGGLE);
+	}
 	
-	switch (ev_result) {
-		case MENU_INPUT_EVENT_RESULT_BLUR_LEFT:
-			my_ev.ev_type = MENU_INPUT_EVENT_FOCUS_RIGHT;
+	//all others are passed on to the focused input element
+	else {
+		//pass the event to the focused input
+		ev_result = self->focused_input->event(self->focused_input, ev_args);
+
+		//we might need to send a second event
+		struct event_args_t my_ev;
 		
-			self->focused_input = self->focused_input->prev_input;
-			self->focused_input->event(self->focused_input, &my_ev);
-		break;
-		
-		case MENU_INPUT_EVENT_RESULT_BLUR_RIGHT:
-			my_ev.ev_type = MENU_INPUT_EVENT_FOCUS_LEFT;
+		switch (ev_result) {
+			case MENU_INPUT_EVENT_RESULT_BLUR_LEFT:
+				my_ev.ev_type = MENU_INPUT_EVENT_FOCUS_RIGHT;
 			
-			self->focused_input = self->focused_input->next_input;
-			self->focused_input->event(self->focused_input, &my_ev);
-		break;
-		
+				self->focused_input = self->focused_input->prev_input;
+				self->focused_input->event(self->focused_input, &my_ev);
+			break;
+			
+			case MENU_INPUT_EVENT_RESULT_BLUR_RIGHT:
+				my_ev.ev_type = MENU_INPUT_EVENT_FOCUS_LEFT;
+				
+				self->focused_input = self->focused_input->next_input;
+				self->focused_input->event(self->focused_input, &my_ev);
+			break;
+		}
 	}
 	
 	return MENU_INPUT_EVENT_RESULT_NONE;

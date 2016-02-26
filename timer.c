@@ -80,7 +80,7 @@ ISR(TIMER2_COMP_vect) {
 			timer_data[i].tmr_val--;
 		}
 		//run the callback in interrupt context if specified
-		else if (timer_data[i].flags.is_isr) {
+		else if (timer_data[i].flags.is_isr && timer_data[i].flags.is_active) {
 			if (timer_data[i].tmr_cb != NULL) {
 				//it's *NOT* allowed to define no callback in ISR context
 				timer_data[i].tmr_cb(i);

@@ -28,7 +28,8 @@ struct tracker_data_t tracker_data = {
 			}
 		}
 	},
-	.position = 0
+	.position = 0,
+	.flags.is_enabled = 1
 };
 
 uint8_t tracker_get_note(const struct track_t* track, uint8_t note) {
@@ -79,7 +80,7 @@ static void tracker_timer_cb (uint8_t timer_id) {
 				cur_track->actuator_engage();
 		}
 	}
-	//timer_set(TIMER_TRACKER_RELEASE, TRACKER_HIT_TIME);
+	timer_set(TIMER_TRACKER_RELEASE, TRACKER_HIT_TIME);
 	tracker_inc_position();
 };
 
@@ -120,8 +121,6 @@ void tracker_init(void) {
 	
 	tracker_set_bpm(TRACKER_BPM_INITIAL);
 	tracker_set_global_state(TRACKER_STATE_RUN);
-	
-	tracker_track_1_actuator_engage();
 };
 
 void tracker_set_track_state(struct track_t* track, uint8_t track_state) {
@@ -141,15 +140,28 @@ uint8_t tracker_get_track_state(const struct track_t* track) {
 }
 
 void tracker_set_global_state(uint8_t tracker_state) {
-	if (tracker_state == TRACKER_STATE_STOP) {
-		timer_stop(TIMER_TRACKER_BEAT);
-		tracker_data.position = 0;
+	if (tracker_state == TRACKER_STATE_TOGGLE) {
+		if (tracker_data.flags.is_enabled) {
+			tracker_set_global_state(TRACKER_STATE_STOP);
+		}
+		else {
+			tracker_set_global_state(TRACKER_STATE_RUN);
+		}
 	}
-	else if (tracker_state == TRACKER_STATE_RUN) {
-		tracker_timer_cb(TIMER_TRACKER_BEAT);
-	}
-	for (uint8_t cur_track = 0; cur_track < TRACKER_NUMBER_OF_TRACKS; cur_track++) {
-		tracker_data.track[cur_track].flags.is_enabled = tracker_state == TRACKER_STATE_RUN ? 1 : 0;
+	else {
+		if (tracker_state == TRACKER_STATE_STOP) {
+			timer_stop(TIMER_TRACKER_BEAT);
+			tracker_data.position = 0;
+			tracker_data.flags.is_enabled = 0;
+		}
+		else if (tracker_state == TRACKER_STATE_RUN) {
+			tracker_timer_cb(TIMER_TRACKER_BEAT);
+			tracker_data.flags.is_enabled = 1;
+		}
+		
+		for (uint8_t cur_track = 0; cur_track < TRACKER_NUMBER_OF_TRACKS; cur_track++) {
+			tracker_data.track[cur_track].flags.is_enabled = tracker_state == TRACKER_STATE_RUN ? 1 : 0;
+		}
 	}
 }
 
