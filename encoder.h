@@ -25,6 +25,7 @@
 
 int8_t encode_read1( void );         // read single step encoders
 int8_t encode_read2( void );         // read two step encoders
+int8_t encode_read4( void );         // read four step encoders
 void encoder_init( void );
 
 #endif /* ENCODER_H_ */

@@ -4,25 +4,21 @@
 struct tracker_data_t tracker_data = {
 	.track = {
 		{
-			.note = {0b00000000, 0b00000000},
 			.flags = {
 				.is_enabled = 1
 			}
 		},
 		{
-			.note = {0b00000000, 0b00000000},
 			.flags = {
 				.is_enabled = 0
 			}
 		},
 		{
-			.note = {0b01000111, 0b00000001},
 			.flags = {
 				.is_enabled = 0
 			}
 		},
 		{
-			.note = {0b11100010, 0b01010101},
 			.flags = {
 				.is_enabled = 1
 			}

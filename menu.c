@@ -325,8 +325,8 @@ void menu_create(void) {
 	bpm_input.next_input = (struct input_t*) &channel_2;
 	bpm_input.draw = (void (*)(struct input_t*)) &number_input_draw;
 	bpm_input.event = (uint8_t (*)(struct input_t*, struct event_args_t*)) &number_input_event;
-	bpm_input.min_value = 30;
-	bpm_input.max_value = 120;
+	bpm_input.min_value = TRACKER_BPM_MIN;
+	bpm_input.max_value = TRACKER_BPM_MAX;
 	bpm_input.value = TRACKER_BPM_INITIAL;
 	bpm_input.update = &tracker_set_bpm;
 	
@@ -451,7 +451,7 @@ void menu_init() {
 	
 	
 	//set up menu event emitters
-	menu.encoder_fn = &encode_read1;
+	menu.encoder_fn = &encode_read4;
 	button_register(NULL, &menu_on_button_up_cb);
 		
 	timer_register(TIMER_MENU, 0, &menu_timer_cb);

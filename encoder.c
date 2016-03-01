@@ -13,17 +13,13 @@
 volatile int8_t enc_delta;          // -128 ... 127
 static int8_t last;
 
-// Dekodertabelle für wackeligen Rastpunkt
-// halbe Auflösung
-const int8_t table[16] PROGMEM = {0,0,-1,0,0,0,0,1,1,0,0,0,0,-1,0,0};
-
  
 void encoder_init( void )
 {
 	int8_t new;
 	
- 	// Activate internal pull-ups for encoder pins
-	ENCODER_PORT |= (1 << ENCODER_PIN_PHASE_A) | (1 << ENCODER_PIN_PHASE_B);
+ 	// Dectivate internal pull-ups for encoder pins
+	ENCODER_PORT &= ~((1 << ENCODER_PIN_PHASE_A) | (1 << ENCODER_PIN_PHASE_B));
 	
 	new = 0;
 	if( ENCODER_PHASE_A ) {
@@ -47,12 +43,18 @@ void encoder_init( void )
  
 ISR( TIMER0_OVF_vect )
 {
-    static int8_t last=0;           // alten Wert speichern
+  int8_t new, diff;
  
-    last = (last << 2)  & 0x0F;
-    if (ENCODER_PHASE_A) last |=2;
-    if (ENCODER_PHASE_B) last |=1;
-    enc_delta -= pgm_read_byte(&table[last]);
+  new = 0;
+  if( ENCODER_PHASE_A )
+    new = 3;
+  if( ENCODER_PHASE_B )
+    new ^= 1;                   // convert gray to binary
+  diff = last - new;                // difference last - new
+  if( diff & 1 ){               // bit 0 = value (1)
+    last = new;                 // store new as next last
+    enc_delta += (diff & 2) - 1;        // bit 1 = direction (+/-)
+  }
 }
  
  
@@ -77,4 +79,15 @@ int8_t encode_read2( void )         // read two step encoders
   enc_delta = val & 1;
   sei();
   return val >> 1;
+}
+
+int8_t encode_read4( void )         // read four step encoders
+{
+  int8_t val;
+ 
+  cli();
+  val = enc_delta;
+  enc_delta = val & 3;
+  sei();
+  return val >> 2;
 }
