@@ -69,7 +69,7 @@ struct input_t {
 	
 	struct input_t* next_input;
 	struct input_t* prev_input;
-	void (*draw)(struct input_t* self);
+	void (*draw)(struct input_t* self, uint8_t full);
 	uint8_t (*event) (struct input_t* self, struct event_args_t* ev_args);
 };
 
@@ -79,6 +79,7 @@ struct channel_input_t {
 	struct track_t *track;
 	char* label;
 	int8_t cursor_pos;
+	int8_t last_tracker_pos;
 };
 
 //subclasses input_t
@@ -97,7 +98,7 @@ struct screen_t {
 	struct input_t **input;
 	struct input_t* focused_input;
 	
-	void (*draw)(struct screen_t* self);
+	void (*draw)(struct screen_t* self, uint8_t draw_full);
 	uint8_t (*event) (struct screen_t* self, struct event_args_t* ev_args);
 };
 

@@ -84,7 +84,7 @@ void update_cursor(void) {
 //functions for inputs
 
 //channel input
-static void channel_input_draw(struct channel_input_t* self) {
+static void channel_input_draw(struct channel_input_t* self, uint8_t draw_full) {
 
 	DISP_GOTOXY(self->coord_x, self->coord_y);
 	DISP_PUTS(self->label);
@@ -171,37 +171,40 @@ static uint8_t channel_input_event(struct channel_input_t* self, struct event_ar
 }
 
 //functions for number input
-static void number_input_draw(struct number_input_t* self) {
+static void number_input_draw(struct number_input_t* self, uint8_t draw_full) {
 
-	//how much space is reserved for drawing the number
-	//warning: you may need to adjust this in accordance to min_value and max_value
-	const uint8_t NUM_WIDTH = 3; 
-	char num_buf[NUM_WIDTH + 1];
-	
-	memset(num_buf, ' ', NUM_WIDTH);
-	num_buf[NUM_WIDTH] = '\0';
-	
-	DISP_GOTOXY(self->coord_x, self->coord_y);
-	DISP_PUTS(self->label);
-	DISP_PUTC(' ');
-	
-	uint8_t frame_visible = !self->flags.is_focused
-		|| (self->flags.is_focused && menu_cursor)
-		|| (self->flags.is_editing);
-	uint8_t value_visible = !self->flags.is_editing 
-		|| (self->flags.is_editing && menu_cursor);
-	
-	frame_visible ? DISP_PUTC('[') :DISP_PUTC(' ');
-	
-	if (value_visible) { 
-		ltoa(self->value, num_buf, 10); //print number right aligned
-		for (uint8_t i = 0; i < NUM_WIDTH - strlen(num_buf); i++) {
-			DISP_PUTC(' ');
-		}	
+	//only need to draw if focused or if draw_full is true
+	if (self->flags.is_focused || draw_full) {
+		//how much space is reserved for drawing the number
+		//warning: you may need to adjust this in accordance to min_value and max_value
+		const uint8_t NUM_WIDTH = 3; 
+		char num_buf[NUM_WIDTH + 1];
+		
+		memset(num_buf, ' ', NUM_WIDTH);
+		num_buf[NUM_WIDTH] = '\0';
+		
+		DISP_GOTOXY(self->coord_x, self->coord_y);
+		DISP_PUTS(self->label);
+		DISP_PUTC(' ');
+		
+		uint8_t frame_visible = !self->flags.is_focused
+			|| (self->flags.is_focused && menu_cursor)
+			|| (self->flags.is_editing);
+		uint8_t value_visible = !self->flags.is_editing 
+			|| (self->flags.is_editing && menu_cursor);
+		
+		frame_visible ? DISP_PUTC('[') :DISP_PUTC(' ');
+		
+		if (value_visible) { 
+			ltoa(self->value, num_buf, 10); //print number right aligned
+			for (uint8_t i = 0; i < NUM_WIDTH - strlen(num_buf); i++) {
+				DISP_PUTC(' ');
+			}	
+		}
+		
+		DISP_PUTS(num_buf);
+		frame_visible ? DISP_PUTC(']') :DISP_PUTC(' ');
 	}
-	
-	DISP_PUTS(num_buf);
-	frame_visible ? DISP_PUTC(']') :DISP_PUTC(' ');
 }
 
 static uint8_t number_input_event(struct number_input_t* self, struct event_args_t* ev_args) {
@@ -245,12 +248,12 @@ static uint8_t number_input_event(struct number_input_t* self, struct event_args
 
 // functions for screens
 
-static void screen_draw(struct screen_t* self) {
+static void screen_draw(struct screen_t* self, uint8_t draw_full) {
 
 	struct input_t** input_p = self->input;
 	
 	do {
-		(*input_p)->draw(*input_p);
+		(*input_p)->draw(*input_p, draw_full);
 	} while (*++input_p != NULL);
 
 }
@@ -315,7 +318,7 @@ void menu_create(void) {
 	channel_1.track = tracker_get_track(0);
 	channel_1.prev_input = (struct input_t*) &channel_4;
 	channel_1.next_input = (struct input_t*) &bpm_input;
-	channel_1.draw = (void (*)(struct input_t*)) &channel_input_draw;
+	channel_1.draw = (void (*)(struct input_t*, uint8_t)) &channel_input_draw;
 	channel_1.event = (uint8_t (*)(struct input_t*, struct event_args_t*)) &channel_input_event;
 	
 	bpm_input.label = "BPM:";
@@ -323,7 +326,7 @@ void menu_create(void) {
 	bpm_input.coord_y = 0;
 	bpm_input.prev_input = (struct input_t*) &channel_1;
 	bpm_input.next_input = (struct input_t*) &channel_2;
-	bpm_input.draw = (void (*)(struct input_t*)) &number_input_draw;
+	bpm_input.draw = (void (*)(struct input_t*, uint8_t)) &number_input_draw;
 	bpm_input.event = (uint8_t (*)(struct input_t*, struct event_args_t*)) &number_input_event;
 	bpm_input.min_value = TRACKER_BPM_MIN;
 	bpm_input.max_value = TRACKER_BPM_MAX;
@@ -337,7 +340,7 @@ void menu_create(void) {
 	channel_2.track = tracker_get_track(1);
 	channel_2.prev_input = (struct input_t*) &bpm_input;
 	channel_2.next_input = (struct input_t*) &channel_3;
-	channel_2.draw = (void (*)(struct input_t*)) &channel_input_draw;
+	channel_2.draw = (void (*)(struct input_t*, uint8_t)) &channel_input_draw;
 	channel_2.event = (uint8_t (*)(struct input_t*, struct event_args_t*)) &channel_input_event;
 	
 	channel_3.coord_x = 0;
@@ -346,7 +349,7 @@ void menu_create(void) {
 	channel_3.track = tracker_get_track(2);
 	channel_3.prev_input = (struct input_t*) &channel_2;
 	channel_3.next_input = (struct input_t*) &channel_4;
-	channel_3.draw = (void (*)(struct input_t*)) &channel_input_draw;
+	channel_3.draw = (void (*)(struct input_t*, uint8_t)) &channel_input_draw;
 	channel_3.event = (uint8_t (*)(struct input_t*, struct event_args_t*)) &channel_input_event;
 
 	channel_4.coord_x = 0;
@@ -355,7 +358,7 @@ void menu_create(void) {
 	channel_4.track = tracker_get_track(3);
 	channel_4.prev_input = (struct input_t*) &channel_3;
 	channel_4.next_input = (struct input_t*) &channel_1;
-	channel_4.draw = (void (*)(struct input_t*)) &channel_input_draw;
+	channel_4.draw = (void (*)(struct input_t*, uint8_t)) &channel_input_draw;
 	channel_4.event = (uint8_t (*)(struct input_t*, struct event_args_t*)) &channel_input_event;
 
 
@@ -409,7 +412,7 @@ void menu_timer_cb(uint8_t timer_id) {
 	}
 	
 	
-	menu.cur_screen->draw(menu.cur_screen);
+	menu.cur_screen->draw(menu.cur_screen, 0);
 	update_cursor();
 } 
 
@@ -455,6 +458,10 @@ void menu_init() {
 	button_register(NULL, &menu_on_button_up_cb);
 		
 	timer_register(TIMER_MENU, 0, &menu_timer_cb);
+	
+	//draw screen completely (draw_full = 1)
+	menu.cur_screen->draw(menu.cur_screen, 1);
+	
 	menu_timer_cb(TIMER_MENU);
 	
 }
