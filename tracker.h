@@ -52,6 +52,7 @@ extern void tracker_set_bpm(int16_t bpm);
 extern void tracker_set_track_state(struct track_t* track, uint8_t track_state);
 extern uint8_t tracker_get_track_state(const struct track_t* track);
 extern void tracker_set_global_state(uint8_t tracker_state);
+extern uint8_t tracker_get_global_state(void);
 
 extern void tracker_init(void);
 

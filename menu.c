@@ -84,32 +84,40 @@ void update_cursor(void) {
 //functions for inputs
 
 //channel input
-static void channel_input_draw(struct channel_input_t* self, uint8_t draw_full) {
+#define MENU_CHANNEL_INPUT_BTN_START_STOP -1 //only used internally by channel input
 
-	DISP_GOTOXY(self->coord_x, self->coord_y);
-	DISP_PUTS(self->label);
-	DISP_PUTS_P(" ");
+//draw a single field (note or start/stop button) of a tracker input
+static void channel_input_draw_single_field(struct channel_input_t* self, int8_t field_idx) {
+	uint8_t x_pos = self->coord_x + strlen(self->label) + 1; //x offset + length of label + trailing space
 	
-	if (self->cursor_pos == -1 && self->flags.is_focused && !menu_cursor) { //cursor on start/stop
-		DISP_PUTC(DISP_SS_CURSOR);
-	}
-	else {
-		if (self->track->flags.is_enabled) {
-			DISP_PUTC(DISP_SS_PLAY);
+	//draw the start/stop button
+	if (field_idx == MENU_CHANNEL_INPUT_BTN_START_STOP) {
+		DISP_GOTOXY(x_pos, self->coord_y);
+		
+		if (self->cursor_pos == MENU_CHANNEL_INPUT_BTN_START_STOP && self->flags.is_focused && !menu_cursor) { //cursor on start/stop
+			DISP_PUTC(DISP_SS_CURSOR);
 		}
 		else {
-			DISP_PUTC(DISP_SS_PAUSE);
+			if (self->track->flags.is_enabled) {
+				DISP_PUTC(DISP_SS_PLAY);
+			}
+			else {
+				DISP_PUTC(DISP_SS_PAUSE);
+			}
 		}
 	}
-	DISP_PUTC(' ');
-	DISP_PUTC(DISP_SS_QSEP);
-	
-	for (uint8_t cur_note = 0; cur_note < TRACKER_NOTES_PER_TRACK; cur_note++) {
-		uint8_t has_note = !! tracker_get_note(self->track, cur_note);
-		uint8_t track_enabled = tracker_get_track_state(self->track) == TRACKER_STATE_RUN;
-		uint8_t on_pos = tracker_get_position() == cur_note;
+	else { //draw note field
+		x_pos 	+= 2 // start/stop symbol plus trailing space 
+				+ field_idx //note offset
+				+ (field_idx / 4) + 1; //account for separators after every 4 notes
 		
-		if (cur_note == self->cursor_pos && self->flags.is_focused && menu_cursor) {
+		DISP_GOTOXY(x_pos, self->coord_y);
+
+		uint8_t has_note = !! tracker_get_note(self->track, field_idx);
+		uint8_t track_enabled = tracker_get_track_state(self->track) == TRACKER_STATE_RUN;
+		uint8_t on_pos = tracker_get_position() == field_idx;
+		
+		if (field_idx == self->cursor_pos && self->flags.is_focused && menu_cursor) {
 			DISP_PUTC(DISP_SS_CURSOR);
 		}
 		else {			
@@ -123,21 +131,59 @@ static void channel_input_draw(struct channel_input_t* self, uint8_t draw_full) 
 				DISP_PUTC(DISP_SS_BLOCK);
 			}
 		}
-		if ((cur_note + 1) % 4 == 0) {
-			DISP_PUTC(DISP_SS_QSEP);
+		
+	}
+		
+}
+
+static void channel_input_draw(struct channel_input_t* self, uint8_t draw_full) {
+	
+	
+	// draw the complete UI element
+	if (draw_full) { 
+		DISP_GOTOXY(self->coord_x, self->coord_y);
+		DISP_PUTS(self->label);
+		DISP_PUTS_P(" ");
+		
+		channel_input_draw_single_field(self, MENU_CHANNEL_INPUT_BTN_START_STOP);
+
+		DISP_PUTC(' ');
+		DISP_PUTC(DISP_SS_QSEP);
+		
+		for (uint8_t cur_note = 0; cur_note < TRACKER_NOTES_PER_TRACK; cur_note++) {
+			
+			channel_input_draw_single_field(self, cur_note);
+			
+			if ((cur_note + 1) % 4 == 0) {
+				DISP_PUTC(DISP_SS_QSEP);
+			}
 		}
 	}
+	// only do a refresh, i.e. re-draw everything that might have changed.
+	// this affects only five fields: old and new position of the cursor,
+	// old and new tracker position and start/stop button.
+	else {
+		channel_input_draw_single_field(self, MENU_CHANNEL_INPUT_BTN_START_STOP);
+		channel_input_draw_single_field(self, self->cursor_pos);
+		channel_input_draw_single_field(self, self->last_cursor_pos);
+		channel_input_draw_single_field(self, tracker_get_position());
+		channel_input_draw_single_field(self, self->last_tracker_pos);
+	}
+	
+	//remember the two values so that we can later re-draw these fields
+	self->last_cursor_pos = self->cursor_pos;
+	self->last_tracker_pos = tracker_get_position();
+		
 }
 
 
 static uint8_t channel_input_event(struct channel_input_t* self, struct event_args_t* ev_args) {
 	uint8_t ret = MENU_INPUT_EVENT_RESULT_NONE; //default result
-	const int8_t BTN_START_STOP = -1; //cursor pos of start/stop control
 	
 	switch (ev_args->ev_type) {
 		case MENU_INPUT_EVENT_FOCUS_LEFT:
 			self->flags.is_focused = 1;
-			self->cursor_pos = BTN_START_STOP;
+			self->cursor_pos = MENU_CHANNEL_INPUT_BTN_START_STOP;
 			break;
 			
 		case MENU_INPUT_EVENT_FOCUS_RIGHT:
@@ -152,14 +198,17 @@ static uint8_t channel_input_event(struct channel_input_t* self, struct event_ar
 				ret = MENU_INPUT_EVENT_RESULT_BLUR_RIGHT;
 				self->flags.is_focused = 0;
 			}
-			if (self->cursor_pos < BTN_START_STOP) {
+			if (self->cursor_pos < MENU_CHANNEL_INPUT_BTN_START_STOP) {
 				 ret = MENU_INPUT_EVENT_RESULT_BLUR_LEFT;
 				 self->flags.is_focused = 0;
 			}
 			break;
 		case MENU_INPUT_EVENT_BUTTON_UP:
-			if (self->cursor_pos == BTN_START_STOP) {
-				tracker_set_track_state(self->track, TRACKER_STATE_TOGGLE);
+			if (self->cursor_pos == MENU_CHANNEL_INPUT_BTN_START_STOP) {
+				//can only control channel if tracker not globally stopped
+				if (tracker_get_global_state() != TRACKER_STATE_STOP) {
+					tracker_set_track_state(self->track, TRACKER_STATE_TOGGLE);
+				}
 			}
 			else { //cursor on note
 				tracker_toggle_note(self->track, self->cursor_pos);

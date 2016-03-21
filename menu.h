@@ -79,6 +79,7 @@ struct channel_input_t {
 	struct track_t *track;
 	char* label;
 	int8_t cursor_pos;
+	int8_t last_cursor_pos;
 	int8_t last_tracker_pos;
 };
 

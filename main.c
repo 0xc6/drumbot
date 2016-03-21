@@ -26,18 +26,6 @@
 
 
 
-/*
-void my_test_timer(uint8_t tmr_id) {
-	//timer_set(TIMER_TRACKER_BPM, 250);
-	
-	PORTB &= ~(1 << PB0);
-
-	menu_draw();
-	PORTB |= (1 << PB0);
-	
-}*/
-
-
 int main(void) {
 
 
@@ -48,19 +36,6 @@ int main(void) {
 	menu_init();
 	tracker_init();
 
-	//testcode
-
-	
-	
-	//init LED blinker
-	
-	//timer_register(TIMER_TRACKER_BPM, &my_test_timer);
-	//my_test_timer(TIMER_TRACKER_BPM);
-	
-	
-	
-	
-	// end testcode
 	
 	sei(); //globally enable interrupts
 

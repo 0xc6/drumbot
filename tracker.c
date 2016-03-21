@@ -135,6 +135,10 @@ uint8_t tracker_get_track_state(const struct track_t* track) {
 	return track->flags.is_enabled ? TRACKER_STATE_RUN : TRACKER_STATE_STOP;
 }
 
+uint8_t tracker_get_global_state() {
+	return tracker_data.flags.is_enabled ? TRACKER_STATE_RUN : TRACKER_STATE_STOP;
+}
+
 void tracker_set_global_state(uint8_t tracker_state) {
 	if (tracker_state == TRACKER_STATE_TOGGLE) {
 		if (tracker_data.flags.is_enabled) {
