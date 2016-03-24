@@ -32,8 +32,8 @@
 #define DISP_PUTS(s) lcd_puts(s)
 #define DISP_PUTS_P(s) lcd_puts_P(s)
 
-#define MENU_REFRESH_INTERVAL 300 //how often is the menu redrawn (ms)
-#define MENU_CURSOR_BLINK_FACTOR 1 //every X times the display is refreshed the cursor should change state
+#define MENU_REFRESH_INTERVAL 200 //how often is the menu redrawn (ms)
+#define MENU_CURSOR_BLINK_FACTOR 2 //every X times the display is refreshed the cursor should change state
 
 #define MENU_INPUT_EVENT_ENCODER 		0
 #define MENU_INPUT_EVENT_BUTTON_UP 		1
@@ -65,6 +65,7 @@ struct input_t {
 	struct {
 		uint8_t is_focused: 1;
 		uint8_t is_editing: 1;
+		uint8_t need_redraw: 1;
 	} flags;
 	
 	struct input_t* next_input;

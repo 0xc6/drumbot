@@ -90,48 +90,50 @@ void update_cursor(void) {
 static void channel_input_draw_single_field(struct channel_input_t* self, int8_t field_idx) {
 	uint8_t x_pos = self->coord_x + strlen(self->label) + 1; //x offset + length of label + trailing space
 	
-	//draw the start/stop button
-	if (field_idx == MENU_CHANNEL_INPUT_BTN_START_STOP) {
-		DISP_GOTOXY(x_pos, self->coord_y);
-		
-		if (self->cursor_pos == MENU_CHANNEL_INPUT_BTN_START_STOP && self->flags.is_focused && !menu_cursor) { //cursor on start/stop
-			DISP_PUTC(DISP_SS_CURSOR);
-		}
-		else {
-			if (self->track->flags.is_enabled) {
-				DISP_PUTC(DISP_SS_PLAY);
+	if (field_idx >= MENU_CHANNEL_INPUT_BTN_START_STOP && field_idx < TRACKER_NOTES_PER_TRACK) {
+		//draw the start/stop button
+		if (field_idx == MENU_CHANNEL_INPUT_BTN_START_STOP) {
+			DISP_GOTOXY(x_pos, self->coord_y);
+			
+			if (self->cursor_pos == MENU_CHANNEL_INPUT_BTN_START_STOP && self->flags.is_focused && !menu_cursor) { //cursor on start/stop
+				DISP_PUTC(DISP_SS_CURSOR);
 			}
 			else {
-				DISP_PUTC(DISP_SS_PAUSE);
+				if (self->track->flags.is_enabled) {
+					DISP_PUTC(DISP_SS_PLAY);
+				}
+				else {
+					DISP_PUTC(DISP_SS_PAUSE);
+				}
 			}
 		}
-	}
-	else { //draw note field
-		x_pos 	+= 2 // start/stop symbol plus trailing space 
-				+ field_idx //note offset
-				+ (field_idx / 4) + 1; //account for separators after every 4 notes
-		
-		DISP_GOTOXY(x_pos, self->coord_y);
+		else { //draw note field
+			x_pos 	+= 2 // start/stop symbol plus trailing space 
+					+ field_idx //note offset
+					+ (field_idx / 4) + 1; //account for separators after every 4 notes
+			
+			DISP_GOTOXY(x_pos, self->coord_y);
 
-		uint8_t has_note = !! tracker_get_note(self->track, field_idx);
-		uint8_t track_enabled = tracker_get_track_state(self->track) == TRACKER_STATE_RUN;
-		uint8_t on_pos = tracker_get_position() == field_idx;
-		
-		if (field_idx == self->cursor_pos && self->flags.is_focused && menu_cursor) {
-			DISP_PUTC(DISP_SS_CURSOR);
+			uint8_t has_note = !! tracker_get_note(self->track, field_idx);
+			uint8_t track_enabled = tracker_get_track_state(self->track) == TRACKER_STATE_RUN;
+			uint8_t on_pos = tracker_get_position() == field_idx;
+			
+			if (field_idx == self->cursor_pos && self->flags.is_focused && menu_cursor) {
+				DISP_PUTC(DISP_SS_CURSOR);
+			}
+			else {			
+				if (has_note && (!track_enabled || !on_pos)) {
+					DISP_PUTC(DISP_SS_NOTE);
+				}
+				else if (!has_note && (!track_enabled || !on_pos)) {
+					DISP_PUTC(DISP_SS_NO_NOTE);
+				}
+				else if (track_enabled && on_pos) {
+					DISP_PUTC(DISP_SS_BLOCK);
+				}
+			}
+			
 		}
-		else {			
-			if (has_note && (!track_enabled || !on_pos)) {
-				DISP_PUTC(DISP_SS_NOTE);
-			}
-			else if (!has_note && (!track_enabled || !on_pos)) {
-				DISP_PUTC(DISP_SS_NO_NOTE);
-			}
-			else if (track_enabled && on_pos) {
-				DISP_PUTC(DISP_SS_BLOCK);
-			}
-		}
-		
 	}
 		
 }
@@ -223,7 +225,7 @@ static uint8_t channel_input_event(struct channel_input_t* self, struct event_ar
 static void number_input_draw(struct number_input_t* self, uint8_t draw_full) {
 
 	//only need to draw if focused or if draw_full is true
-	if (self->flags.is_focused || draw_full) {
+	if (self->flags.is_focused || self->flags.need_redraw || draw_full) {
 		//how much space is reserved for drawing the number
 		//warning: you may need to adjust this in accordance to min_value and max_value
 		const uint8_t NUM_WIDTH = 3; 
@@ -253,6 +255,7 @@ static void number_input_draw(struct number_input_t* self, uint8_t draw_full) {
 		
 		DISP_PUTS(num_buf);
 		frame_visible ? DISP_PUTC(']') :DISP_PUTC(' ');
+		self->flags.need_redraw = 0;
 	}
 }
 
@@ -287,6 +290,7 @@ static uint8_t number_input_event(struct number_input_t* self, struct event_args
 					ret = MENU_INPUT_EVENT_RESULT_BLUR_RIGHT;
 				}
 				self->flags.is_focused = 0;
+				self->flags.need_redraw = 1;
 			}
 			break;
 	}

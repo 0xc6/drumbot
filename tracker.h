@@ -16,11 +16,11 @@
 #define TRACKER_STATE_RUN 1
 #define TRACKER_STATE_TOGGLE 2
 
-#define TRACKER_BPM_INITIAL 100
+#define TRACKER_BPM_INITIAL 120
 #define TRACKER_BPM_MIN 30
-#define TRACKER_BPM_MAX 150
+#define TRACKER_BPM_MAX 160
 
-#define TRACKER_HIT_TIME 100 //how long (ms) the actuators engage to play a note
+#define TRACKER_HIT_TIME 80 //how long (ms) the actuators engage to play a note
 
 
 struct tracker_data_t {
